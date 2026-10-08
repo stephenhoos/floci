@@ -39,6 +39,7 @@ the remaining formats (NuGet, etc.) have no real proxy behind them yet.
 | `DisassociateExternalConnection` | Removes a repository's external connection. |
 | `PublishPackageVersion` | Uploads a generic-format asset, creating or extending a package version; requires `x-amz-content-sha256` and verifies it against the real hash of the bytes received. |
 | `DescribePackage` | Returns a package's format, namespace, name, and origin controls (`publish` and `upstream` restrictions). |
+| `DeletePackage` | Deletes a package and every one of its versions; `ResourceNotFoundException` for one that does not exist. |
 | `DescribePackageVersion` | Returns a package version's status, revision, and origin. |
 | `GetPackageVersionAsset` | Downloads one asset from a package version by name, optionally pinned to a specific revision. |
 | `TagResource` | Adds or updates tags on a domain or repository ARN. |
@@ -283,6 +284,11 @@ state.
   `upstream: BLOCK`, the default for a package whose first version was published directly. For
   Maven, npm, and pypi, `DescribePackage` asks the repository's sidecar whether the package exists,
   which starts that sidecar if it is not already running.
+- **`DeletePackage` cannot delete a pypi package.** pypiserver has no delete capability at all
+  (every plausible route answers `405 Method Not Allowed`), so Floci cannot honestly carry out a
+  pypi `DeletePackage` the way it does for Maven and npm. Rather than claim a success it cannot
+  back up, it answers `InternalServerException` for `format: pypi`, the same way a real,
+  undocumented sidecar failure would surface.
 
 See the [CodeArtifact API Reference](https://docs.aws.amazon.com/codeartifact/latest/APIReference/Welcome.html).
 

@@ -64,4 +64,16 @@ public interface RepositorySidecarManager {
      */
     boolean packageExists(String repositoryContainerId, String domain, String repository, String namespace,
             String packageName);
+
+    /**
+     * Deletes every version of the named package from this sidecar's own backing storage. Not every
+     * sidecar can do this (pypiserver, confirmed live, has no delete endpoint at all: every plausible
+     * route answers HTTP 405); the default throws {@link UnsupportedOperationException} rather than
+     * silently leaving the package in place or claiming a success it cannot back up. An implementation
+     * that genuinely can delete overrides this.
+     */
+    default void deletePackage(String repositoryContainerId, String domain, String repository, String namespace,
+            String packageName) {
+        throw new UnsupportedOperationException(format() + " packages cannot be deleted through this sidecar");
+    }
 }

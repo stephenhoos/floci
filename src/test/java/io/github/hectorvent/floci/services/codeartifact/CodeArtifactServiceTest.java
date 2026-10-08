@@ -35,11 +35,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -1071,6 +1073,142 @@ class CodeArtifactServiceTest {
         AwsException e = assertThrows(AwsException.class, () -> service.describePackage(REGION, "dom", null, "repo",
                 "pypi", "bogus-namespace", "real-pkg"));
         assertEquals("ValidationException", e.getErrorCode());
+    }
+
+    @Test
+    void deletePackageRemovesEveryVersionAndAssetButLeavesOtherPackagesAlone() {
+        service.createDomain(REGION, "dom", null, Map.of());
+        service.createRepository(REGION, "dom", null, "repo", null, null, Map.of());
+        byte[] content = "x".getBytes(StandardCharsets.UTF_8);
+        service.publishPackageVersion(REGION, "dom", null, "repo", "generic", "ns", "my-pkg", "1.0.0", "a.txt",
+                sha256Hex(content), "false", content);
+        service.publishPackageVersion(REGION, "dom", null, "repo", "generic", "ns", "my-pkg", "2.0.0", "a.txt",
+                sha256Hex(content), "false", content);
+        service.publishPackageVersion(REGION, "dom", null, "repo", "generic", "ns", "other-pkg", "1.0.0", "a.txt",
+                sha256Hex(content), "false", content);
+
+        CodeArtifactService.PackageDescription deleted = service.deletePackage(REGION, "dom", null, "repo",
+                "generic", "ns", "my-pkg");
+        assertEquals("generic", deleted.format());
+        assertEquals("ns", deleted.namespace());
+        assertEquals("my-pkg", deleted.packageName());
+
+        AwsException goneAsPackage = assertThrows(AwsException.class, () -> service.describePackage(REGION, "dom",
+                null, "repo", "generic", "ns", "my-pkg"));
+        assertEquals("ResourceNotFoundException", goneAsPackage.getErrorCode());
+        AwsException goneVersionOne = assertThrows(AwsException.class, () -> service.getPackageVersionAsset(REGION,
+                "dom", null, "repo", "generic", "ns", "my-pkg", "1.0.0", "a.txt", null));
+        assertEquals("ResourceNotFoundException", goneVersionOne.getErrorCode());
+        AwsException goneVersionTwo = assertThrows(AwsException.class, () -> service.getPackageVersionAsset(REGION,
+                "dom", null, "repo", "generic", "ns", "my-pkg", "2.0.0", "a.txt", null));
+        assertEquals("ResourceNotFoundException", goneVersionTwo.getErrorCode());
+
+        CodeArtifactService.PackageDescription stillThere = service.describePackage(REGION, "dom", null, "repo",
+                "generic", "ns", "other-pkg");
+        assertEquals("other-pkg", stillThere.packageName());
+
+        AwsException alreadyDeleted = assertThrows(AwsException.class, () -> service.deletePackage(REGION, "dom",
+                null, "repo", "generic", "ns", "my-pkg"));
+        assertEquals("ResourceNotFoundException", alreadyDeleted.getErrorCode());
+
+        AwsException unknown = assertThrows(AwsException.class, () -> service.deletePackage(REGION, "dom", null,
+                "repo", "generic", "ns", "no-such-package"));
+        assertEquals("ResourceNotFoundException", unknown.getErrorCode());
+    }
+
+    @Test
+    void deletePackageBridgesToReposiliteForMavenAfterConfirmingItExists() {
+        service.createDomain(REGION, "dom", null, Map.of());
+        CodeArtifactRepository created =
+                service.createRepository(REGION, "dom", null, "repo", null, null, Map.of());
+        String repoId = created.getSidecarContainerIds().get("maven");
+        when(reposiliteClient.packageExists(eq(repoId), eq("dom"), eq("repo"), eq("com.example"),
+                eq("my-artifact"))).thenReturn(true);
+
+        CodeArtifactService.PackageDescription deleted = service.deletePackage(REGION, "dom", null, "repo", "maven",
+                "com.example", "my-artifact");
+
+        assertEquals("maven", deleted.format());
+        verify(reposiliteClient).deletePackage(repoId, "dom", "repo", "com.example", "my-artifact");
+    }
+
+    @Test
+    void deletePackageReportsNotFoundForAContainerBackedPackageThatDoesNotExistRatherThanDeletingAnything() {
+        service.createDomain(REGION, "dom", null, Map.of());
+        service.createRepository(REGION, "dom", null, "repo", null, null, Map.of());
+        when(verdaccioClient.packageExists(anyString(), eq("dom"), eq("repo"), isNull(), eq("my-pkg")))
+                .thenReturn(false);
+
+        AwsException e = assertThrows(AwsException.class, () -> service.deletePackage(REGION, "dom", null, "repo",
+                "npm", null, "my-pkg"));
+        assertEquals("ResourceNotFoundException", e.getErrorCode());
+        verify(verdaccioClient, never()).deletePackage(any(), any(), any(), any(), any());
+    }
+
+    /**
+     * pypiserver has no delete capability at all (confirmed live: every plausible route answers
+     * 405), so its sidecar throws {@link UnsupportedOperationException} rather than claim a success
+     * it cannot back up. The service must not let that propagate as an unhandled 500: it becomes a
+     * real, if deliberately blunt, documented AWS error instead.
+     */
+    @Test
+    void deletePackageTranslatesAnUnsupportedSidecarDeleteIntoAnInternalServerException() {
+        service.createDomain(REGION, "dom", null, Map.of());
+        service.createRepository(REGION, "dom", null, "repo", null, null, Map.of());
+        when(pypiserverClient.packageExists(anyString(), eq("dom"), eq("repo"), isNull(), eq("my-pkg")))
+                .thenReturn(true);
+        doThrow(new UnsupportedOperationException("pypi packages cannot be deleted through this sidecar"))
+                .when(pypiserverClient).deletePackage(anyString(), eq("dom"), eq("repo"), isNull(), eq("my-pkg"));
+
+        AwsException e = assertThrows(AwsException.class, () -> service.deletePackage(REGION, "dom", null, "repo",
+                "pypi", null, "my-pkg"));
+        assertEquals("InternalServerException", e.getErrorCode());
+    }
+
+    /**
+     * Mirrors describePackage's own boundary-validation test: deletePackage must reject the same
+     * malformed coordinates before touching repository state, not just the single maven-namespace
+     * check it had before this test existed.
+     */
+    @Test
+    void deletePackageValidatesPackageAndNamespaceShapeBeforeTouchingRepositoryState() {
+        AwsException badPackageName = assertThrows(AwsException.class, () -> service.deletePackage(REGION,
+                "no-such-domain", null, "repo", "generic", "ns", "has/slash"));
+        assertEquals("ValidationException", badPackageName.getErrorCode());
+
+        service.createDomain(REGION, "dom", null, Map.of());
+        service.createRepository(REGION, "dom", null, "repo", null, null, Map.of());
+
+        AwsException badNamespace = assertThrows(AwsException.class, () -> service.deletePackage(REGION, "dom",
+                null, "repo", "generic", "has#hash", "my-pkg"));
+        assertEquals("ValidationException", badNamespace.getErrorCode());
+
+        AwsException missingNamespaceForGeneric = assertThrows(AwsException.class, () -> service.deletePackage(
+                REGION, "dom", null, "repo", "generic", null, "my-pkg"));
+        assertEquals("ValidationException", missingNamespaceForGeneric.getErrorCode());
+
+        AwsException missingNamespaceForMaven = assertThrows(AwsException.class, () -> service.deletePackage(
+                REGION, "dom", null, "repo", "maven", null, "my-artifact"));
+        assertEquals("ValidationException", missingNamespaceForMaven.getErrorCode());
+    }
+
+    /**
+     * pypi packages have no namespace at all (same API-reference fact describePackage's own test
+     * documents). Without this rejection, a caller-supplied namespace would be silently ignored by
+     * the sidecar's existence check below and the real package would be deleted anyway, as if the
+     * namespace the caller specified had actually been honored.
+     */
+    @Test
+    void deletePackageRejectsANamespaceSuppliedForPypiRatherThanDeletingTheRealPackageAnyway() {
+        service.createDomain(REGION, "dom", null, Map.of());
+        service.createRepository(REGION, "dom", null, "repo", null, null, Map.of());
+        when(pypiserverClient.packageExists(anyString(), eq("dom"), eq("repo"), isNull(), eq("real-pkg")))
+                .thenReturn(true);
+
+        AwsException e = assertThrows(AwsException.class, () -> service.deletePackage(REGION, "dom", null, "repo",
+                "pypi", "bogus-namespace", "real-pkg"));
+        assertEquals("ValidationException", e.getErrorCode());
+        verify(pypiserverClient, never()).deletePackage(any(), any(), any(), any(), any());
     }
 
     @Test

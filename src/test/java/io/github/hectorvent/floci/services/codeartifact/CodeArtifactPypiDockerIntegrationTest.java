@@ -357,6 +357,26 @@ class CodeArtifactPypiDockerIntegrationTest {
     }
 
     /**
+     * pypiserver has no delete capability at all, confirmed live before this was built: every
+     * plausible route (the file, the simple index) answers HTTP 405. {@code DeletePackage} must
+     * not claim a success it cannot back up, so this asserts the deliberate, documented refusal
+     * instead, and that the package already uploaded in this class is still untouched afterward.
+     */
+    @Test
+    @Order(13)
+    void deletePackageRefusesRatherThanClaimingASuccessItCannotBackUp() {
+        given().header("Authorization", AUTH)
+                .delete("/v1/package?domain=" + DOMAIN + "&repository=" + REPO + "&format=pypi&package="
+                        + PACKAGE_NAME)
+                .then().statusCode(500).body("__type", equalTo("InternalServerException"));
+
+        given().header("Authorization", AUTH)
+                .get("/v1/package/version/asset?domain=" + DOMAIN + "&repository=" + REPO + "&format=pypi"
+                        + "&package=" + PACKAGE_NAME + "&version=1.0.0&asset=" + FILENAME)
+                .then().statusCode(200);
+    }
+
+    /**
      * Proves the actual mechanism, not just that {@code PypiserverSidecarManager} has a method
      * named right: {@code ContainerTeardowns.stopAll} runs every {@code ContainerTeardown} on
      * {@code /state/reset}, and this is what stops a live container.
