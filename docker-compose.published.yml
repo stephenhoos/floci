@@ -1,0 +1,32 @@
+# Ready-to-run trusted development profile; no source checkout or compilation.
+services:
+  floci:
+    image: ghcr.io/stephenhoos/floci:2.2.0-hoos.1
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:6379-6399:6379-6399"
+      - "127.0.0.1:7001-7099:7001-7099"
+      - "127.0.0.1:9200-9299:9200-9299"
+    volumes:
+      - ${FLOCI_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      - floci-data:/app/data
+    environment:
+      FLOCI_SERVICES_DOCKER_NETWORK: floci_hoos
+      FLOCI_DOCKER_RESOURCE_NAMESPACE: floci-hoos
+      FLOCI_HOSTNAME: floci
+      FLOCI_BASE_URL: http://floci:4566
+      FLOCI_SERVICES_RDS_PROXY_BASE_PORT: "7001"
+      FLOCI_SERVICES_ELASTICACHE_CLUSTER_ANNOUNCE_HOSTNAME: localhost.floci.io
+      FLOCI_SECURITY_ALLOW_PRIVILEGED_CONTAINERS: "false"
+      FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED: "false"
+      FLOCI_SERVICES_UI_ENABLED: "false"
+      FLOCI_TLS_ENABLED: "false"
+    networks:
+      floci_hoos:
+        aliases:
+          - localhost.floci.io
+networks:
+  floci_hoos:
+    name: floci_hoos
+volumes:
+  floci-data:

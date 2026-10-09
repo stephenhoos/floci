@@ -62,7 +62,7 @@ The Airflow container is pointed back at Floci itself (`AWS_ENDPOINT_URL`, place
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:

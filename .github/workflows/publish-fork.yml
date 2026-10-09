@@ -1,0 +1,191 @@
+name: Publish Hoos builds
+
+on:
+  push:
+    tags:
+      - 'v*-hoos.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-hoos-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/stephenhoos/floci
+
+jobs:
+  package:
+    if: github.repository == 'stephenhoos/floci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: version
+        name: Validate fork release version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-hoos\.[0-9]+$ ]]
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Verify security boundaries and build the JVM runtime
+        run: >-
+          ./mvnw -B package checkstyle:check
+          -Dtest=RequestSecurityFilterTest,RequestSecurityIntegrationTest,ScreenedHttpClientTest,HostPathContainmentTest,ContainerLaunchSecurityTest,WorkloadCredentialFilterTest,LaunchedContainerAwsEnvTest,DockerfileRuntimeParityTest
+      - name: Package runnable downloads
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python3 tools/release/package-jvm.py "$VERSION"
+      - name: Test the extracted Java download
+        shell: bash
+        run: |
+          mkdir extracted
+          tar -xzf dist/floci-*-jvm.tar.gz --strip-components=1 -C extracted
+          QUARKUS_HTTP_PORT=15665 bash extracted/run.sh >jvm-smoke.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" || true' EXIT
+          ready=false
+          for _ in {1..120}; do
+            if curl -fsS http://127.0.0.1:15665/_floci/health >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != true ]; then cat jvm-smoke.log; exit 1; fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jvm-downloads
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  image:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.package.outputs.version }}
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: jvm-downloads
+          path: dist
+      - name: Stage the prebuilt application
+        run: |
+          mkdir -p target
+          tar -xzf "dist/floci-$VERSION-jvm.tar.gz" --strip-components=1 -C target
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build an image for runtime testing
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile.jvm-package
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}
+          build-args: VERSION=${{ env.VERSION }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/stephenhoos/floci
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+            org.opencontainers.image.licenses=MIT
+      - name: Verify the runnable image with AWS CLI calls
+        run: bash tools/release/smoke-image.sh "$IMAGE:$VERSION"
+      - name: Create a downloadable Docker archive
+        run: docker save "$IMAGE:$VERSION" | gzip >"dist/floci-$VERSION-linux-$ARCH-docker.tar.gz"
+      - name: Push the tested architecture
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile.jvm-package
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}-${{ matrix.arch }}
+          build-args: VERSION=${{ env.VERSION }}
+          provenance: mode=max
+          sbom: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/stephenhoos/floci
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+            org.opencontainers.image.licenses=MIT
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-${{ matrix.arch }}
+          path: dist/*-docker.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [package, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    env:
+      VERSION: ${{ needs.package.outputs.version }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish multi-platform version and familiar aliases
+        run: |
+          docker buildx imagetools create \
+            --tag "$IMAGE:$VERSION" --tag "$IMAGE:latest" \
+            --tag "$IMAGE:$VERSION-compat" --tag "$IMAGE:latest-compat" \
+            "$IMAGE:$VERSION-amd64" "$IMAGE:$VERSION-arm64"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
+      - name: Sign the published image digest
+        run: |
+          digest="$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{json .Manifest}}' | jq -r .digest)"
+          cosign sign --yes --recursive "$IMAGE@$digest"
+          printf '%s@%s\n' "$IMAGE" "$digest" >dist/image-digest.txt
+      - name: Publish runnable downloads and checksums
+        run: |
+          (cd dist && sha256sum floci-*-jvm.tar.gz floci-*-jvm.zip floci-*-docker.tar.gz compose.yaml image-digest.txt >SHA256SUMS)
+          python3 tools/release/release-notes.py "$VERSION" >dist/RELEASE_NOTES.md
+          gh release create "$GITHUB_REF_NAME" --verify-tag \
+            --title "Floci $VERSION (Hoos security fixes)" \
+            --notes-file dist/RELEASE_NOTES.md \
+            dist/floci-*.tar.gz dist/floci-*.zip dist/compose.yaml dist/SHA256SUMS dist/image-digest.txt

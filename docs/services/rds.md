@@ -232,7 +232,7 @@ unset to retain the auto-detected endpoint host and configured proxy port.
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
       - "127.0.0.1:7001-7099:7001-7099"   # RDS proxy ports
@@ -268,7 +268,7 @@ them. Each resource still gets a unique endpoint port, but nothing listens on it
 # docker-compose.yml — CI / test environment
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_SERVICES_RDS_MOCK: "true"
 ```

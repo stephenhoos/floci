@@ -85,7 +85,7 @@ Neptune requires the Docker socket and the Gremlin proxy port range to be expose
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
       - "8182-8282:8182-8282"   # Neptune Gremlin proxy ports

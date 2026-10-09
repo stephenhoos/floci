@@ -26,7 +26,7 @@ describe("S3", () => {
     let floci: FlociContainer;
 
     beforeAll(async () => {
-        floci = await new FlociContainer().start();
+        floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
     });
 
     afterAll(async () => {
@@ -68,7 +68,7 @@ describe("SQS", () => {
     let sqs: SQSClient;
 
     beforeAll(async () => {
-        floci = await new FlociContainer().start();
+        floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
         sqs = new SQSClient({
             endpoint: floci.getEndpoint(),
             region: floci.getRegion(),
@@ -121,7 +121,7 @@ describe("DynamoDB", () => {
     let dynamo: DynamoDBClient;
 
     beforeAll(async () => {
-        floci = await new FlociContainer().start();
+        floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
         dynamo = new DynamoDBClient({
             endpoint: floci.getEndpoint(),
             region: floci.getRegion(),
@@ -181,7 +181,7 @@ describe("S3", () => {
     let floci: FlociContainer;
 
     beforeAll(async () => {
-        floci = await new FlociContainer().start();
+        floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
     });
 
     afterAll(async () => {
@@ -220,7 +220,7 @@ Start the container once in a global setup file and expose the endpoint via an e
     let floci: FlociContainer;
 
     export async function setup() {
-        floci = await new FlociContainer().start();
+        floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
         process.env.FLOCI_ENDPOINT = floci.getEndpoint();
     }
 
@@ -245,7 +245,7 @@ Start the container once in a global setup file and expose the endpoint via an e
     let floci: FlociContainer;
 
     export async function setup() {
-        floci = await new FlociContainer().start();
+        floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
         process.env.FLOCI_ENDPOINT = floci.getEndpoint();
     }
 

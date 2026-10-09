@@ -4,14 +4,14 @@ This guide gets Floci running and verifies that AWS CLI commands work against it
 
 ## Step 1 — Start Floci
 
-=== "Native (recommended)"
+=== "Docker (recommended)"
 
-    `latest` is the native image — sub-second startup, minimal memory:
+    `latest` is this fork's Java 25 image, including AWS CLI and boto3. Allow up to two minutes for a first start:
 
     ```yaml
     services:
       floci:
-        image: floci/floci:latest
+        image: ghcr.io/stephenhoos/floci:latest
         ports:
           - "127.0.0.1:4566:4566"
         volumes:
@@ -31,12 +31,12 @@ This guide gets Floci running and verifies that AWS CLI commands work against it
 
 === "Compat (+ AWS CLI + boto3)"
 
-    Use `latest-compat` if you need the AWS CLI and boto3 inside the container:
+    `latest-compat` is an alias of the same JVM image, for compatibility with upstream installation examples:
 
     ```yaml
     services:
       floci:
-        image: floci/floci:latest-compat
+        image: ghcr.io/stephenhoos/floci:latest-compat
         ports:
           - "127.0.0.1:4566:4566"
         volumes:
@@ -57,7 +57,7 @@ This guide gets Floci running and verifies that AWS CLI commands work against it
 === "Build from source"
 
     ```bash
-    git clone https://github.com/floci-io/floci.git
+    git clone https://github.com/stephenhoos/floci.git
     cd floci
     mvn quarkus:dev   # hot reload, port 4566
     ```

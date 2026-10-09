@@ -88,7 +88,7 @@ services:
     image: amazon/dynamodb-local:3.3.1
     command: ["-jar", "DynamoDBLocal.jar", "-inMemory"]
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
     environment:

@@ -77,7 +77,7 @@ ECR uses Floci's existing `4566` listener. The backing registry binds a loopback
 # ECR uses the existing Floci API port
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
       - "127.0.0.1:6379-6399:6379-6399"   # ElastiCache

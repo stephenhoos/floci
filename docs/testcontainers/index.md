@@ -18,7 +18,7 @@ For Testcontainers 2.x / Spring Boot 4.x, use version `2.15.0`.
 
 ## How it works
 
-Every module exposes a `FlociContainer` class that wraps the official `floci/floci:latest` Docker image. When the container starts it waits for port 4566 to be ready, then exposes:
+Every module exposes a `FlociContainer` class. Upstream modules default to upstream images; these examples explicitly select this fork's `ghcr.io/stephenhoos/floci:2.2.0-hoos.1` image. When the container starts it waits for port 4566 to be ready, then exposes:
 
 | Method | Returns |
 |---|---|

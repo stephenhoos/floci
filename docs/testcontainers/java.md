@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class S3IntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1");
 
     @Test
     void shouldCreateBucket() {
@@ -77,7 +77,7 @@ class S3IntegrationTest {
 class SqsIntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1");
 
     @Test
     void shouldSendAndReceiveMessage() {
@@ -105,7 +105,7 @@ class SqsIntegrationTest {
 class DynamoDbIntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1");
 
     @Test
     void shouldCreateTableAndPutItem() {
@@ -175,7 +175,7 @@ class AppIntegrationTest {
 
     @Container
     @ServiceConnection
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1");
 
     @Autowired
     S3Client s3;
@@ -200,7 +200,7 @@ Declare the container in a shared base class or a JUnit 5 extension to start it 
 abstract class FlociTestBase {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1");
 
     static S3Client s3;
 

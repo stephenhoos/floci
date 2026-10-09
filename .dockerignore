@@ -1,4 +1,7 @@
 *
+!LICENSE
+!licenses/
+!licenses/**
 !bin/awslocal
 !docker/entrypoint.sh
 !docker/localstack-parity.sh

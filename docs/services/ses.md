@@ -105,7 +105,7 @@ integration testing with tools like
 # docker-compose.yml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports: ["127.0.0.1:4566:4566"]
     environment:
       FLOCI_SERVICES_SES_SMTP_HOST: mailpit

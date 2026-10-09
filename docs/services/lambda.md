@@ -657,7 +657,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: floci
-          image: floci/floci:latest
+          image: ghcr.io/stephenhoos/floci:latest
           env:
             - name: FLOCI_SERVICES_LAMBDA_EXECUTOR
               value: kubernetes
@@ -860,7 +860,7 @@ For hybrid local/cloud testing, where some services are emulated and others hit 
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_SERVICES_LAMBDA_AWS_CONFIG_PATH: /Users/me/.aws
     volumes:

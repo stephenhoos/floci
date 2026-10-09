@@ -36,7 +36,7 @@ Floci is configured exclusively through environment variables. Every option belo
 Without an independent API key, anyone who can reach Floci's port can call its APIs. Emulated IAM credentials do not authenticate access to the emulator itself. The Docker images listen on `0.0.0.0` inside the container and pass both settings in their default command, so who can reach Floci depends on how you publish the port. Publish it on loopback unless other machines need it:
 
 ```bash
-docker run --rm -p 127.0.0.1:4566:4566 floci/floci:latest
+docker run --rm -p 127.0.0.1:4566:4566 ghcr.io/stephenhoos/floci:latest
 ```
 
 Running Floci directly on a Linux host (not in a container) with services that start containers, such as Lambda functions or ECS tasks, needs a non-loopback address. Those containers reach Floci through `host.docker.internal`, which resolves to the Docker bridge gateway (`172.17.0.1` by default) rather than to the host's loopback. Set `QUARKUS_HTTP_HOST=0.0.0.0` and `FLOCI_SECURITY_ALLOW_UNSAFE_NETWORK_EXPOSURE=true`, and keep port 4566 closed to other networks with a firewall. See also [Lambda on native Linux Docker](../getting-started/quick-start.md#lambda-on-native-linux-docker-ufw).

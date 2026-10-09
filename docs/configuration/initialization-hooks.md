@@ -5,7 +5,7 @@ Use them to seed resources, configure state, or clean up after a run — before 
 
 !!! tip "Use the compat image for scripts that call `aws` or `boto3`"
     Scripts that invoke the AWS CLI or Python boto3 require the compat image, which bundles Python 3, the AWS CLI, and boto3 — all pre-configured for `http://localhost:4566`.
-    Use `floci/floci:latest-compat` (or a pinned `x.y.z-compat`) instead of the standard image.
+    Use `ghcr.io/stephenhoos/floci:latest-compat` (or a pinned `x.y.z-compat`) instead of the standard image.
 
 ## Lifecycle Phases
 
@@ -57,7 +57,7 @@ Floci uses a fail-fast strategy:
 
 ## AWS CLI in Hook Scripts
 
-The compat image (`floci/floci:latest-compat`) includes the AWS CLI and boto3 with the local endpoint pre-configured.
+The compat image (`ghcr.io/stephenhoos/floci:latest-compat`) includes the AWS CLI and boto3 with the local endpoint pre-configured.
 Scripts can call `aws` directly — no `--endpoint-url` flag needed:
 
 ```sh
@@ -98,7 +98,7 @@ s3.create_bucket(Bucket="my-bucket")
 ```yaml title="docker-compose.yml"
 services:
   floci:
-    image: floci/floci:latest-compat
+    image: ghcr.io/stephenhoos/floci:latest-compat
     ports:
       - "127.0.0.1:4566:4566"
     volumes:

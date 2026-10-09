@@ -92,7 +92,7 @@ deviates from the contract in exactly two places, so two settings are all it tak
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
     volumes:

@@ -126,7 +126,7 @@ With `FLOCI_TLS_ENABLED=true` the broker also listens on `FLOCI_SERVICES_IOT_MQT
 The listener asks for a client certificate and decides the connection when the `CONNECT` arrives, see [Device verification on 8883](#device-verification-on-8883). Sessions, subscriptions and reserved topics are shared with the plaintext listener, so a client id connecting on one port replaces its session on the other, as on AWS. Both listeners start together: with the first IoT API call, or at boot with `FLOCI_SERVICES_IOT_MQTT_AUTO_START=true`.
 
 ```bash
-docker run -e FLOCI_TLS_ENABLED=true -e FLOCI_SERVICES_IOT_MQTT_AUTO_START=true -p 127.0.0.1:4566:4566 -p 8883:8883 floci/floci:latest
+docker run -e FLOCI_TLS_ENABLED=true -e FLOCI_SERVICES_IOT_MQTT_AUTO_START=true -p 127.0.0.1:4566:4566 -p 8883:8883 ghcr.io/stephenhoos/floci:latest
 curl http://localhost:4566/_floci/ca.pem -o ca.pem
 aws --endpoint-url http://localhost:4566 iot create-keys-and-certificate --set-as-active \
   --certificate-pem-outfile device.crt --private-key-outfile device.key --query certificateArn --output text
@@ -157,7 +157,7 @@ AWS returns a bare hostname and lets each client add its own port: 8883 for MQTT
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_TLS_ENABLED: "true"
       FLOCI_SERVICES_IOT_ENDPOINT_ADDRESS: iot.example.localhost.floci.io

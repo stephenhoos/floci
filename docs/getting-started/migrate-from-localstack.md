@@ -9,7 +9,7 @@ LocalStack environment variable translation is **on by default**. Floci automati
 ```yaml title="docker-compose.yml"
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
     environment:
@@ -36,17 +36,17 @@ Pick the variant that matches your needs:
 image: localstack/localstack
 
 # After — no init scripts, or init scripts that don't call aws / boto3
-image: floci/floci:latest
+image: ghcr.io/stephenhoos/floci:latest
 
 # After — init scripts that use aws CLI or boto3 (AWS CLI + Python 3 + boto3 pre-installed)
-image: floci/floci:latest-compat
+image: ghcr.io/stephenhoos/floci:latest-compat
 ```
 
 To pin a specific release, replace `latest` / `latest-compat` with a version tag:
 
 ```yaml
-image: floci/floci:1.5.11
-image: floci/floci:1.5.11-compat
+image: ghcr.io/stephenhoos/floci:2.2.0-hoos.1
+image: ghcr.io/stephenhoos/floci:2.2.0-hoos.1-compat
 ```
 
 The port (`4566`), credentials (`test` / `test`), and AWS SDK configuration are unchanged.
@@ -94,14 +94,14 @@ See [Initialization Hooks](../configuration/initialization-hooks.md) for the ful
 
 ### 4 — Init script tooling (compat image)
 
-If your init scripts call `aws` or `boto3`, switch from `localstack/localstack` to `floci/floci:latest-compat`:
+If your init scripts call `aws` or `boto3`, switch from `localstack/localstack` to `ghcr.io/stephenhoos/floci:latest-compat`:
 
 ```yaml title="docker-compose.yml"
 # Before
 image: localstack/localstack
 
 # After (includes Python 3, AWS CLI, boto3 — pre-configured for localhost:4566)
-image: floci/floci:latest-compat
+image: ghcr.io/stephenhoos/floci:latest-compat
 ```
 
 The compat image pre-configures the AWS CLI to talk to `http://localhost:4566` — no `--endpoint-url` flag is needed in scripts:
@@ -192,7 +192,7 @@ services:
 ```yaml title="docker-compose.yml (after — Floci, minimal change)"
 services:
   floci:
-    image: floci/floci:latest-compat  # (1)
+    image: ghcr.io/stephenhoos/floci:latest-compat  # (1)
     ports:
       - "127.0.0.1:4566:4566"
     environment:

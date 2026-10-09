@@ -147,7 +147,7 @@ Redshift needs the Docker socket so it can launch PostgreSQL containers. Each cl
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"
     volumes:

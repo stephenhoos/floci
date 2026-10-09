@@ -173,7 +173,7 @@ Only the proxy-based services (ElastiCache, MemoryDB, RDS, Neptune, MWAA) need p
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
       - "127.0.0.1:4566:4566"           # All AWS API calls
       - "127.0.0.1:6379-6399:6379-6399" # ElastiCache / Redis proxy (proxy in Floci)

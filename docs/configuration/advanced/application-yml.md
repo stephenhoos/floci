@@ -429,7 +429,7 @@ quarkus:
 **TestContainers example:**
 
 ```java
-new GenericContainer<>("floci/floci:latest")
+new GenericContainer<>("ghcr.io/stephenhoos/floci:latest")
     .withExposedPorts(4566)
     .withEnv("QUARKUS_LOG_CATEGORY__IO_GITHUB_HECTORVENT_FLOCI_SERVICES_SQS__LEVEL", "TRACE");
 ```

@@ -41,7 +41,7 @@ the same partition and an endpoint override:
 ```bash
 docker run --rm -p 127.0.0.1:4566:4566 \
   -e FLOCI_DEFAULT_REGION=cn-north-1 \
-  floci/floci:latest
+  ghcr.io/stephenhoos/floci:latest
 
 AWS_DEFAULT_REGION=cn-north-1 bin/awslocal sts get-caller-identity
 # "Arn": "arn:aws-cn:iam::000000000000:root"

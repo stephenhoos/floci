@@ -351,7 +351,7 @@ itself, which macOS and browsers do and Debian-based images do not.
 Start Floci with [TLS](../configuration/tls.md) enabled and trust its CA once:
 
 ```bash
-docker run -e FLOCI_TLS_ENABLED=true -p 127.0.0.1:4566:4566 floci/floci:latest
+docker run -e FLOCI_TLS_ENABLED=true -p 127.0.0.1:4566:4566 ghcr.io/stephenhoos/floci:latest
 curl -s http://localhost:4566/_floci/ca.pem -o floci-root-ca.pem
 ```
 
