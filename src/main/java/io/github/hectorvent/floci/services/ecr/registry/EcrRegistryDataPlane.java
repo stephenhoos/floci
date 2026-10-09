@@ -36,7 +36,7 @@ public class EcrRegistryDataPlane {
             "^([0-9]{12})\\.dkr\\.ecr\\.([a-z0-9-]+)\\.localhost(?:\\.floci\\.io)?(?::[0-9]+)?$");
     private static final String MANIFESTS_PATH = "/manifests/";
     private static final Set<String> HOP_BY_HOP_HEADERS = Set.of(
-            "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+            "x-floci-api-key", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
             "te", "trailers", "transfer-encoding", "upgrade");
 
     private final EcrRegistryManager registryManager;

@@ -29,7 +29,7 @@ import (
 func TestS3CreateBucket(t *testing.T) {
     ctx := context.Background()
 
-    container, err := floci.NewFlociContainer().Start(ctx)
+    container, err := floci.NewFlociContainer().WithImage("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").Start(ctx)
     if err != nil {
         t.Fatal(err)
     }
@@ -81,7 +81,7 @@ func TestS3CreateBucket(t *testing.T) {
 func TestSqsSendReceive(t *testing.T) {
     ctx := context.Background()
 
-    container, err := floci.NewFlociContainer().Start(ctx)
+    container, err := floci.NewFlociContainer().WithImage("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").Start(ctx)
     if err != nil {
         t.Fatal(err)
     }
@@ -132,7 +132,7 @@ func TestSqsSendReceive(t *testing.T) {
 func TestDynamoDBPutGet(t *testing.T) {
     ctx := context.Background()
 
-    container, err := floci.NewFlociContainer().Start(ctx)
+    container, err := floci.NewFlociContainer().WithImage("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").Start(ctx)
     if err != nil {
         t.Fatal(err)
     }
@@ -201,7 +201,7 @@ func TestMain(m *testing.M) {
     ctx := context.Background()
 
     var err error
-    sharedContainer, err = floci.NewFlociContainer().Start(ctx)
+    sharedContainer, err = floci.NewFlociContainer().WithImage("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").Start(ctx)
     if err != nil {
         log.Fatalf("failed to start floci: %v", err)
     }
@@ -232,14 +232,14 @@ Options are chained on the builder before calling `Start`:
 container, err := floci.NewFlociContainer().
     WithRegion("eu-west-1").
     WithAccountID("123456789012").
-    WithImage("floci/floci:1.6.0").
+    WithImage("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").
     WithDedicatedNetwork().
     Start(ctx)
 ```
 
 | Method | Default | Description |
 |---|---|---|
-| `WithImage(image string)` | `floci/floci:latest` | Docker image to use |
+| `WithImage(image string)` | `floci/floci:latest` | Upstream default; use `WithImage` to select this fork |
 | `WithRegion(region string)` | `us-east-1` | AWS region set in Floci and returned by `GetRegion()` |
 | `WithAccountID(id string)` | `000000000000` | Default AWS account ID used in ARNs |
 | `WithAvailabilityZone(az string)` | `us-east-1a` | Availability zone reported by Floci |
@@ -250,7 +250,7 @@ container, err := floci.NewFlociContainer().
 Each service exposes a typed config struct. Pass it with the matching `With<Service>Config` method:
 
 ```go
-container, err := floci.NewFlociContainer().
+container, err := floci.NewFlociContainer().WithImage("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").
     WithS3Config(floci.S3Config{
         Enabled:                    true,
         DefaultPresignExpirySeconds: 7200,

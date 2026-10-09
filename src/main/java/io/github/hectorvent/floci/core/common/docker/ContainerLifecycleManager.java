@@ -24,6 +24,7 @@ import com.github.dockerjava.core.command.WaitContainerResultCallback;
 import io.github.hectorvent.floci.config.ContainerCaBundle;
 import io.github.hectorvent.floci.config.EmulatorConfig;
 import io.github.hectorvent.floci.config.EmulatorConfig.EcsServiceConfig.ImagePullBehavior;
+import io.github.hectorvent.floci.core.common.AwsException;
 import io.github.hectorvent.floci.services.lambda.launcher.ImageCacheService;
 import io.github.hectorvent.floci.services.lambda.launcher.ImageCacheService.LaunchImage;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -84,6 +85,7 @@ public class ContainerLifecycleManager {
     private final ContainerDetector containerDetector;
     private final PortAllocator portAllocator;
     private final EmulatorConfig config;
+    private final Set<String> approvedImageIds = ConcurrentHashMap.newKeySet();
 
     /** Volumes whose shared-ownership root has already been initialised this process (run-once guard). */
     private final ConcurrentHashMap<String, Boolean> initializedSharedVolumes = new ConcurrentHashMap<>();
@@ -132,7 +134,12 @@ public class ContainerLifecycleManager {
      * whatever a later pull of the same reference moves its tag to.
      */
     public LaunchImage resolveImageForLaunch(String image, ImagePullBehavior behavior) {
-        return imageCacheService.resolveForLaunch(image, behavior);
+        validateImage(image);
+        LaunchImage resolved = imageCacheService.resolveForLaunch(image, behavior);
+        if (config.security().allowedContainerImages().isPresent()) {
+            approvedImageIds.add(resolved.imageId());
+        }
+        return resolved;
     }
 
     /**
@@ -144,6 +151,7 @@ public class ContainerLifecycleManager {
      * @return the container ID
      */
     public String create(ContainerSpec spec) {
+        validateLaunch(spec);
         String resolvedImage = imageCacheService.ensureImageExists(spec.image());
         return create(spec, resolvedImage, null);
     }
@@ -156,8 +164,26 @@ public class ContainerLifecycleManager {
      * @return the container ID
      */
     public String create(ContainerSpec spec, String platform) {
+        validateLaunch(spec);
         String resolvedImage = imageCacheService.ensureImageExists(spec.image(), platform);
         return create(spec, resolvedImage, platform);
+    }
+
+    private void validateLaunch(ContainerSpec spec) {
+        if (spec.privileged() && !config.security().allowPrivilegedContainers()) {
+            throw new AwsException("AccessDeniedException", "Privileged containers are disabled. "
+                    + "Only enable FLOCI_SECURITY_ALLOW_PRIVILEGED_CONTAINERS in an isolated Docker environment.", 403);
+        }
+        validateImage(spec.image());
+    }
+
+    private void validateImage(String image) {
+        config.security().allowedContainerImages().ifPresent(allowed -> {
+            if (!allowed.contains(image) && !approvedImageIds.contains(image)) {
+                throw new AwsException("AccessDeniedException", "Container image is not approved by "
+                        + "FLOCI_SECURITY_ALLOWED_CONTAINER_IMAGES.", 403);
+            }
+        });
     }
 
     private String create(ContainerSpec spec, String resolvedImage, String platform) {
@@ -684,6 +710,7 @@ public class ContainerLifecycleManager {
         script.append("true");
 
         String image = (initImage != null && !initImage.isBlank()) ? initImage : "busybox:stable";
+        validateImage(image);
         imageCacheService.ensureImageExists(image);
 
         HostConfig hostConfig = HostConfig.newHostConfig().withMounts(List.of(
@@ -811,6 +838,7 @@ public class ContainerLifecycleManager {
      * fail the start it was preparing.
      */
     public Optional<Map<String, String>> imageLabels(String image) {
+        validateImage(image);
         try {
             String resolved = imageCacheService.ensureImageExists(image);
             Map<String, String> labels = dockerClient.inspectImageCmd(resolved).exec().getConfig().getLabels();
@@ -1223,8 +1251,8 @@ public class ContainerLifecycleManager {
      * <p>An explicit address from {@code portBindingHostIps} wins, so a caller that reads the
      * address from configuration keeps control of it. {@code loopbackPortBindings} is the fixed
      * form of the same decision, for a port that is an implementation detail and must never leave
-     * the host. A port in neither binds every interface, which is Docker's own default and what
-     * every caller that does not ask has always got.
+     * the host. ContainerBuilder supplies the configured publishing address by default.
+     * Legacy specifications with neither setting retain Docker's own publishing behavior.
      */
     private static Ports.Binding bindingFor(ContainerSpec spec, int containerPort, int hostPort) {
         String hostIp = spec.portBindingHostIps() == null

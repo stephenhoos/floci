@@ -11,6 +11,7 @@ import io.github.hectorvent.floci.core.common.AwsArnUtils;
 import io.github.hectorvent.floci.core.common.AwsException;
 import io.github.hectorvent.floci.core.common.RegionResolver;
 import io.github.hectorvent.floci.core.common.Resettable;
+import io.github.hectorvent.floci.core.common.ScreenedHttpClient;
 import io.github.hectorvent.floci.core.common.ServicePrincipals;
 import io.github.hectorvent.floci.core.common.SsrfProtection;
 import io.github.hectorvent.floci.core.resource.ExplorerResource;
@@ -161,7 +162,8 @@ public class SnsService implements Resettable, ResourceProvider {
                 firehoseService,
                 config.effectiveBaseUrl(),
                 objectMapper,
-                messageSigner
+                messageSigner,
+                new ScreenedHttpClient(config.security().allowPrivateOutboundTargets())
         );
     }
 
@@ -266,6 +268,21 @@ public class SnsService implements Resettable, ResourceProvider {
                RegionResolver regionResolver, SqsService sqsService,
                LambdaService lambdaService, FirehoseService firehoseService,
                String baseUrl, ObjectMapper objectMapper, SnsMessageSigner messageSigner) {
+        this(topicStore, subscriptionStore, platformAppStore, platformEndpointStore, smsStore,
+                smsAttributesStore, regionResolver, sqsService, lambdaService, firehoseService,
+                baseUrl, objectMapper, messageSigner, new ScreenedHttpClient(true));
+    }
+
+    private SnsService(StorageBackend<String, Topic> topicStore,
+                       StorageBackend<String, Subscription> subscriptionStore,
+                       StorageBackend<String, PlatformApplication> platformAppStore,
+                       StorageBackend<String, PlatformEndpoint> platformEndpointStore,
+                       StorageBackend<String, SentSms> smsStore,
+                       StorageBackend<String, Map<String, String>> smsAttributesStore,
+                       RegionResolver regionResolver, SqsService sqsService,
+                       LambdaService lambdaService, FirehoseService firehoseService,
+                       String baseUrl, ObjectMapper objectMapper, SnsMessageSigner messageSigner,
+                       HttpClient httpClient) {
         this.topicStore = topicStore;
         this.subscriptionStore = subscriptionStore;
         this.platformAppStore = platformAppStore;
@@ -278,7 +295,7 @@ public class SnsService implements Resettable, ResourceProvider {
         this.firehoseService = firehoseService;
         this.baseUrl = baseUrl;
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        this.httpClient = httpClient;
         this.messageSigner = messageSigner;
     }
 

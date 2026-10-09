@@ -126,7 +126,7 @@ With `FLOCI_TLS_ENABLED=true` the broker also listens on `FLOCI_SERVICES_IOT_MQT
 The listener asks for a client certificate and decides the connection when the `CONNECT` arrives, see [Device verification on 8883](#device-verification-on-8883). Sessions, subscriptions and reserved topics are shared with the plaintext listener, so a client id connecting on one port replaces its session on the other, as on AWS. Both listeners start together: with the first IoT API call, or at boot with `FLOCI_SERVICES_IOT_MQTT_AUTO_START=true`.
 
 ```bash
-docker run -e FLOCI_TLS_ENABLED=true -e FLOCI_SERVICES_IOT_MQTT_AUTO_START=true -p 4566:4566 -p 8883:8883 floci/floci:latest
+docker run -e FLOCI_TLS_ENABLED=true -e FLOCI_SERVICES_IOT_MQTT_AUTO_START=true -p 127.0.0.1:4566:4566 -p 8883:8883 ghcr.io/stephenhoos/floci:latest
 curl http://localhost:4566/_floci/ca.pem -o ca.pem
 aws --endpoint-url http://localhost:4566 iot create-keys-and-certificate --set-as-active \
   --certificate-pem-outfile device.crt --private-key-outfile device.key --query certificateArn --output text
@@ -157,18 +157,18 @@ AWS returns a bare hostname and lets each client add its own port: 8883 for MQTT
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_TLS_ENABLED: "true"
       FLOCI_SERVICES_IOT_ENDPOINT_ADDRESS: iot.example.localhost.floci.io
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
       - "8883:8883"   # MQTT over TLS
       - "443:443"     # HTTPS data plane, https://<endpointAddress>/topics/<topic>
       - "8443:443"    # optional: the HTTPS port AWS uses with client certificates
 ```
 
-The value is a hostname or `host:port`, never a URL, and is returned as is for every endpoint type: AWS hands out one hostname per type (`iot:Data-ATS`, `iot:Data`, `iot:Jobs`, `iot:CredentialProvider`), Floci answers all four with this one. The name is added to the generated server certificate, like `FLOCI_HOSTNAME`, so devices verify it on 8883 and 443; a name under `localhost.floci.io` resolves to `127.0.0.1` on its own, any other needs a DNS or `/etc/hosts` entry. Floci does not detect published ports itself: unset, or set to an empty value, `DescribeEndpoint` keeps returning `host:4566`, so the plain `-p 4566:4566` setup keeps working for IoT Data clients.
+The value is a hostname or `host:port`, never a URL, and is returned as is for every endpoint type: AWS hands out one hostname per type (`iot:Data-ATS`, `iot:Data`, `iot:Jobs`, `iot:CredentialProvider`), Floci answers all four with this one. The name is added to the generated server certificate, like `FLOCI_HOSTNAME`, so devices verify it on 8883 and 443; a name under `localhost.floci.io` resolves to `127.0.0.1` on its own, any other needs a DNS or `/etc/hosts` entry. Floci does not detect published ports itself: unset, or set to an empty value, `DescribeEndpoint` keeps returning `host:4566`, so the plain `-p 127.0.0.1:4566:4566` setup keeps working for IoT Data clients.
 
 ### MQTT over WebSocket
 

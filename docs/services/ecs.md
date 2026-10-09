@@ -826,12 +826,12 @@ allows both of those on a user-defined network.
 docker network create floci-net
 
 docker run -d --name floci \
-  -p 4566:4566 \
+  -p 127.0.0.1:4566:4566 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --network floci-net \
   -e FLOCI_SERVICES_ECS_DOCKER_NETWORK=floci-net \
   -e FLOCI_SERVICES_ECS_TASK_ROLE_CREDENTIALS_ENABLED=true \
-  floci/floci:latest
+  ghcr.io/stephenhoos/floci:latest
 ```
 
 Credentials a task sets for itself always win. Floci drops only the baseline `AWS_ACCESS_KEY_ID`,
@@ -875,7 +875,7 @@ Always rejected, regardless of configuration:
   ```yaml
   services:
     floci:
-      image: floci/floci:latest
+      image: ghcr.io/stephenhoos/floci:latest
       environment:
         FLOCI_SERVICES_ECS_HOST_VOLUME_ROOTS: /srv/floci/volumes,/data
   ```
@@ -907,7 +907,7 @@ Set `FLOCI_SERVICES_ECS_MOCK=true` to run without Docker. In this mode tasks ski
 # docker-compose.yml — CI / test environment
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_SERVICES_ECS_MOCK: "true"
 ```
@@ -916,7 +916,7 @@ services:
 # docker-compose.yml — local development (real containers)
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -931,7 +931,7 @@ When `mock: false` (the default), ECS launches real Docker containers and requir
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -947,7 +947,7 @@ Set `FLOCI_SERVICES_ECS_PUBLISH_AWSVPC_PORTS_TO_HOST=true` to opt into stable ho
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

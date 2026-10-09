@@ -7,9 +7,9 @@ Terraform can use Floci as a local AWS-compatible endpoint. Terraform sends requ
 ```yaml title="docker-compose.yml"
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - ./data:/app/data
 ```

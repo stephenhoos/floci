@@ -53,7 +53,7 @@ using Xunit;
 
 public sealed class S3Tests : IAsyncLifetime
 {
-    private readonly FlociContainer _floci = new FlociBuilder("floci/floci:latest").Build();
+    private readonly FlociContainer _floci = new FlociBuilder("ghcr.io/stephenhoos/floci:latest").Build();
 
     public Task InitializeAsync() => _floci.StartAsync();
 
@@ -92,7 +92,7 @@ using Xunit;
 
 public sealed class SqsTests : IAsyncLifetime
 {
-    private readonly FlociContainer _floci = new FlociBuilder("floci/floci:latest").Build();
+    private readonly FlociContainer _floci = new FlociBuilder("ghcr.io/stephenhoos/floci:latest").Build();
 
     public Task InitializeAsync() => _floci.StartAsync();
 
@@ -142,7 +142,7 @@ using Xunit;
 
 public sealed class DynamoDbTests : IAsyncLifetime
 {
-    private readonly FlociContainer _floci = new FlociBuilder("floci/floci:latest").Build();
+    private readonly FlociContainer _floci = new FlociBuilder("ghcr.io/stephenhoos/floci:latest").Build();
 
     public Task InitializeAsync() => _floci.StartAsync();
 
@@ -194,7 +194,7 @@ public sealed class DynamoDbTests : IAsyncLifetime
 Each service has a `record` config with `init` properties. Pass it to the matching `With…` method on the builder; only the settings you set differ from Floci's defaults.
 
 ```csharp
-var floci = new FlociBuilder("floci/floci:latest")
+var floci = new FlociBuilder("ghcr.io/stephenhoos/floci:latest")
     .WithRegion("eu-west-2")
     .WithAccountId("123456789012")
     .WithSqs(new SqsConfig { VisibilityTimeout = 60, MaxMessageSize = 131072 })
@@ -209,7 +209,7 @@ Configs map onto Floci's `FLOCI_SERVICES_<SERVICE>_<SETTING>` environment variab
 RDS, Lambda, ElastiCache, ECS, EC2 and ECR make Floci spawn real sibling containers through the Docker daemon. Their configs opt into mounting the Docker socket and into publishing ports 1:1, because Floci returns `endpoint=localhost:<port>` literally.
 
 ```csharp
-var floci = new FlociBuilder("floci/floci:latest")
+var floci = new FlociBuilder("ghcr.io/stephenhoos/floci:latest")
     .WithRds(new RdsConfig { Enabled = true, ProxyBasePort = 7010 })
     .Build();
 ```

@@ -1,0 +1,19 @@
+# Standalone control-plane profile. Docker-backed workloads intentionally cannot launch.
+services:
+  floci:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "127.0.0.1:4566:4566"
+    volumes:
+      - ./data-hardened:/app/data
+    environment:
+      FLOCI_SECURITY_API_KEY: ${FLOCI_SECURITY_API_KEY:?Set a random emulator API key of at least 32 characters}
+      FLOCI_SECURITY_BROWSER_REQUEST_PROTECTION: "true"
+      FLOCI_SECURITY_ALLOW_PRIVILEGED_CONTAINERS: "false"
+      FLOCI_SECURITY_ALLOWED_CONTAINER_IMAGES: "__no_container_images_approved__"
+      FLOCI_SECURITY_ALLOW_PRIVATE_OUTBOUND_TARGETS: "false"
+      FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED: "false"
+      FLOCI_SERVICES_UI_ENABLED: "false"
+      FLOCI_TLS_ENABLED: "false"

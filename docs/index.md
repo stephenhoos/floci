@@ -29,9 +29,9 @@ See the [Services Overview](services/index.md) for the full list of emulated ser
 ```yaml title="docker-compose.yml"
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       # Local directory bind mount (default)
       - ./data:/app/data

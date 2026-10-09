@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,6 +38,16 @@ class NetworkExposureGuardTest {
         EmulatorConfig.SecurityConfig security = mock(EmulatorConfig.SecurityConfig.class);
         when(security.allowUnsafeNetworkExposure()).thenReturn(allowExposure);
         return security;
+    }
+
+    @Test
+    void weakApiKeyIsRejectedWithoutPrintingItsValue() {
+        EmulatorConfig.SecurityConfig security = security(false);
+        when(security.apiKey()).thenReturn(Optional.of("weak-secret"));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> NetworkExposureGuard.requireConsent("127.0.0.1", security));
+        assertTrue(error.getMessage().contains("32 characters"));
+        assertTrue(!error.getMessage().contains("weak-secret"));
     }
 
     @ParameterizedTest

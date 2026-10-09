@@ -65,9 +65,9 @@ DocumentDB needs the Docker socket so it can launch MongoDB containers. Each clu
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -54,7 +55,7 @@ class ContainerLifecycleManagerCaBundleTest {
     @Mock ImageCacheService imageCacheService;
     @Mock ContainerDetector containerDetector;
     @Mock PortAllocator portAllocator;
-    @Mock EmulatorConfig config;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS) EmulatorConfig config;
     @Mock EmulatorConfig.DockerConfig dockerConfig;
     @Mock EmulatorConfig.TlsConfig tlsConfig;
     @Mock EmulatorConfig.StorageConfig storageConfig;

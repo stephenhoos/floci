@@ -47,9 +47,9 @@ MemoryDB requires the Docker socket and port range exposure. For private registr
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
       - "6400-6419:6400-6419"   # MemoryDB proxy ports
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

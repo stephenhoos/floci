@@ -9,6 +9,9 @@ Two artifact lines are published to keep in sync with the Testcontainers major v
 | 1.x | 3.x | `1.14.0` |
 | 2.x | 4.x | `2.15.0` |
 
+Use `org.testcontainers.utility.DockerImageName` to mark the fork image as compatible
+with the upstream module. Allow a two-minute startup timeout for socket-free JVM instances.
+
 ## Installation
 
 === "Maven"
@@ -50,7 +53,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class S3IntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     @Test
     void shouldCreateBucket() {
@@ -77,7 +81,8 @@ class S3IntegrationTest {
 class SqsIntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     @Test
     void shouldSendAndReceiveMessage() {
@@ -105,7 +110,8 @@ class SqsIntegrationTest {
 class DynamoDbIntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     @Test
     void shouldCreateTableAndPutItem() {
@@ -175,7 +181,8 @@ class AppIntegrationTest {
 
     @Container
     @ServiceConnection
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     @Autowired
     S3Client s3;
@@ -200,7 +207,8 @@ Declare the container in a shared base class or a JUnit 5 extension to start it 
 abstract class FlociTestBase {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     static S3Client s3;
 

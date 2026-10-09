@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 
 class EventBridgeInvokerApiDestinationTest {
@@ -87,7 +88,7 @@ class EventBridgeInvokerApiDestinationTest {
     @Test
     void acquireRatePermit_neverGrantsMoreThanTheLimitToConcurrentDeliveries() throws Exception {
         EventBridgeInvoker invoker = new EventBridgeInvoker(mock(LambdaService.class), mock(SqsService.class),
-                mock(SnsService.class), new ObjectMapper(), mock(EmulatorConfig.class));
+                mock(SnsService.class), new ObjectMapper(), mock(EmulatorConfig.class, RETURNS_DEEP_STUBS));
         // More than the sweep threshold, so the sweep runs while the deliveries below are counting
         for (int i = 0; i < 300; i++) {
             invoker.acquireRatePermit(rateLimited("filler-" + i, 1));

@@ -53,6 +53,9 @@ RUN chown -R 1001:root /app/quarkus-app
 
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY --chmod=755 docker/localstack-parity.sh /usr/local/bin/localstack-parity.sh
+COPY --chmod=755 bin/awslocal /usr/local/bin/awslocal
+COPY LICENSE /app/LICENSE
+COPY licenses/ /app/licenses/
 
 VOLUME /app/data
 
@@ -82,7 +85,7 @@ EXPOSE 6397
 EXPOSE 6398
 EXPOSE 6399
 
-HEALTHCHECK --interval=5s --timeout=3s --retries=5 \
+HEALTHCHECK --start-period=90s --interval=5s --timeout=3s --retries=5 \
     CMD wget -q --spider http://localhost:4566/_floci/health || exit 1
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

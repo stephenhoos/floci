@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 
 class EventBridgeInvokerTest {
 
@@ -637,7 +638,7 @@ class EventBridgeInvokerTest {
                 sqsService,
                 mock(SnsService.class),
                 new ObjectMapper(),
-                mock(EmulatorConfig.class));
+                mock(EmulatorConfig.class, RETURNS_DEEP_STUBS));
         Target target = new Target("id1",
                 "arn:aws:events:eu-west-1:000000000000:event-bus/my-target-bus",
                 null, null);

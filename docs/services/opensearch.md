@@ -24,11 +24,11 @@ OpenSearch 2.12+ requires an initial admin password even when the security plugi
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       FLOCI_SERVICES_DOCKER_NETWORK: my_project_default
 ```
@@ -100,7 +100,7 @@ Use `FLOCI_SERVICES_OPENSEARCH_MOCK=true` when you only need the API shape:
 # docker-compose.yml — CI / test environment
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_SERVICES_OPENSEARCH_MOCK: "true"
 ```

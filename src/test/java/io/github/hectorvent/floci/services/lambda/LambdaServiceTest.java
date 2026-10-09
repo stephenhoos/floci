@@ -38,6 +38,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 
 class LambdaServiceTest {
 
@@ -954,7 +955,7 @@ class LambdaServiceTest {
 
     private LambdaService serviceWithHotReload(boolean enabled, List<String> allowedPaths,
                                                int zipMaxEntries) {
-        EmulatorConfig cfg = mock(EmulatorConfig.class);
+        EmulatorConfig cfg = mock(EmulatorConfig.class, RETURNS_DEEP_STUBS);
         EmulatorConfig.ServicesConfig svc = mock(EmulatorConfig.ServicesConfig.class);
         EmulatorConfig.LambdaServiceConfig lambdaCfg = mock(EmulatorConfig.LambdaServiceConfig.class);
         EmulatorConfig.LambdaServiceConfig.HotReload hr = mock(EmulatorConfig.LambdaServiceConfig.HotReload.class);
@@ -1084,21 +1085,22 @@ class LambdaServiceTest {
         AwsException ex = assertThrows(AwsException.class, () -> svc.createFunction(REGION, req), s3Key);
 
         assertEquals("InvalidParameterValueException", ex.getErrorCode());
-        assertTrue(ex.getMessage().contains("Docker socket"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("ALLOWED_PATHS"), ex.getMessage());
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"/var/lib/app", "/varnish", "/running", "/process/code", "/tmp/my-fn", "/home/ci/code"})
-    void hotReload_withoutAllowListStillAcceptsOrdinaryCodeDirectories(String s3Key) {
+    void hotReload_withoutAllowListRejectsOrdinaryCodeDirectories(String s3Key) {
         LambdaService svc = serviceWithHotReload(true, null);
         Map<String, Object> req = baseRequest("hr-ordinary");
         req.put("Code", Map.of("S3Bucket", "hot-reload", "S3Key", s3Key));
 
-        assertEquals(s3Key, svc.createFunction(REGION, req).getHotReloadHostPath());
+        AwsException error = assertThrows(AwsException.class, () -> svc.createFunction(REGION, req));
+        assertTrue(error.getMessage().contains("ALLOWED_PATHS"));
     }
 
     @Test
-    void hotReload_anExplicitAllowListIsTheOperatorsChoiceAndOverridesTheSocketGuard() {
+    void hotReload_approvedRunSubdirectoryDoesNotExposeTheDockerSocket() {
         LambdaService svc = serviceWithHotReload(true, List.of("/run/my-code"));
         Map<String, Object> req = baseRequest("hr-explicit");
         req.put("Code", Map.of("S3Bucket", "hot-reload", "S3Key", "/run/my-code/app"));
@@ -1153,7 +1155,7 @@ class LambdaServiceTest {
 
     @Test
     void hotReload_happyPath_setsHostPathAndClearsCodeLocalPath() {
-        LambdaService svc = serviceWithHotReload(true, null);
+        LambdaService svc = serviceWithHotReload(true, List.of("/tmp"));
         Map<String, Object> req = baseRequest("hr-fn");
         req.put("Code", Map.of("S3Bucket", "hot-reload", "S3Key", "/tmp/my-fn"));
         LambdaFunction fn = svc.createFunction(REGION, req);
@@ -1174,7 +1176,7 @@ class LambdaServiceTest {
 
     @Test
     void hotReload_updateFunctionCode_setsNewHostPath() {
-        LambdaService svc = serviceWithHotReload(true, null);
+        LambdaService svc = serviceWithHotReload(true, List.of("/tmp"));
         svc.createFunction(REGION, baseRequest("hr-update"));
 
         LambdaFunction updated = svc.updateFunctionCode(REGION, "hr-update",
@@ -1187,7 +1189,7 @@ class LambdaServiceTest {
     void hotReload_convertFromS3Backed_clearsBucketAndKey() {
         // A function previously deployed from S3 that is later converted to hot-reload
         // must have s3Bucket/s3Key cleared so the reactive S3 sync observer cannot fire.
-        LambdaService svc = serviceWithHotReload(true, null);
+        LambdaService svc = serviceWithHotReload(true, List.of("/tmp"));
         Map<String, Object> req = baseRequest("hr-convert");
         req.put("Code", Map.of("S3Bucket", "my-code-bucket", "S3Key", "fn.zip"));
         // createFunction with a non-existent S3 bucket will fail inside extractZipCodeFromS3

@@ -1,0 +1,11 @@
+Floci includes code adapted from docker-java 3.7.1, docker-java-transport-httpclient5.
+Copyright docker-java contributors, licensed under the Apache License, Version 2.0.
+The license text is included in Apache-2.0.txt.
+
+Adapted classes: ApacheDockerHttpClient, ApacheDockerHttpClientImpl and
+HijackingHttpRequestExecutor, now FlociDockerHttpClient and HijackingHttpRequestExecutor.
+Changes include a Floci-owned builder, JBoss Logging, switch expressions, connection
+pool validation and eviction, bounded connection leases, transient-I/O retries,
+explicit certificate trust and screened outbound HTTP clients.
+
+Third-party dependency JARs retain their own META-INF license and notice resources.

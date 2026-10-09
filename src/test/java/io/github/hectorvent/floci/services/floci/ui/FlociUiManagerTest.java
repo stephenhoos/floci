@@ -904,9 +904,7 @@ class FlociUiManagerTest {
     // --- where the console is published ---
 
     @Test
-    void anUnsetBindAddressLeavesDockersOwnDefault() {
-        // Unset is what the console has always had: published on every interface, the same as a
-        // bare "4500:4500" mapping, which is what the documented compose files give the API too.
+    void anUnsetBindAddressPublishesOnLoopback() {
         withUiConfig();
         when(ui.enabled()).thenReturn(true);
         when(ui.image()).thenReturn("floci/floci-ui:latest");
@@ -917,7 +915,7 @@ class FlociUiManagerTest {
 
         ContainerBuilder.Builder specBuilder = newStartedSidecar();
 
-        verify(specBuilder).withPortBinding(4500, 4500, null);
+        verify(specBuilder).withPortBinding(4500, 4500, "127.0.0.1");
     }
 
     @Test
@@ -937,8 +935,8 @@ class FlociUiManagerTest {
     }
 
     @Test
-    void anUnsetBindAddressResolvesToNoAddressAtAll() {
-        assertNull(FlociUiManager.resolveBindAddress(Optional.empty()));
+    void anUnsetBindAddressResolvesToLoopback() {
+        assertEquals("127.0.0.1", FlociUiManager.resolveBindAddress(Optional.empty()));
     }
 
     @Test

@@ -28,10 +28,10 @@ services:
 The container normally switches to the unprivileged `floci` user (UID 1001), including when started with `--user root`. If the mounted socket is accessible only to root, set the entrypoint option `FLOCI_RUN_AS_ROOT=true` to keep Floci running as root:
 
 ```bash
-docker run --rm -p 4566:4566 \
+docker run --rm -p 127.0.0.1:4566:4566 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e FLOCI_RUN_AS_ROOT=true \
-  floci/floci:latest
+  ghcr.io/stephenhoos/floci:latest
 ```
 
 In Docker Compose, use the same environment variable:
@@ -39,7 +39,7 @@ In Docker Compose, use the same environment variable:
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -268,7 +268,7 @@ podman network create floci-net
 
 podman run -d --name floci \
   --network floci-net \
-  -p 4566:4566 \
+  -p 127.0.0.1:4566:4566 \
   -v /run/user/$(id -u)/podman/podman.sock:/var/run/docker.sock:z \
   -e FLOCI_SERVICES_LAMBDA_DOCKER_NETWORK=floci-net \
   -e FLOCI_HOSTNAME=floci \

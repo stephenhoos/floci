@@ -10,10 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/floci-io/floci/releases/latest"><img src="https://img.shields.io/github/v/release/floci-io/floci?label=latest%20release&color=blue" alt="Latest Release"></a>
-  <a href="https://github.com/floci-io/floci/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/floci-io/floci/release.yml?label=build" alt="Build Status"></a>
-  <a href="https://hub.docker.com/r/floci/floci"><img src="https://img.shields.io/docker/pulls/floci/floci?label=docker%20pulls" alt="Docker Pulls"></a>
-  <a href="https://hub.docker.com/r/floci/floci"><img src="https://img.shields.io/docker/image-size/floci/floci/latest?label=image%20size" alt="Docker Image Size"></a>
+  <a href="https://github.com/stephenhoos/floci/releases/latest"><img src="https://img.shields.io/github/v/release/stephenhoos/floci?label=Hoos%20release&color=blue" alt="Latest Hoos Release"></a>
+  <a href="https://github.com/stephenhoos/floci/actions/workflows/publish-fork.yml"><img src="https://img.shields.io/github/actions/workflow/status/stephenhoos/floci/publish-fork.yml?label=publish" alt="Publishing Status"></a>
+  <a href="https://github.com/stephenhoos/floci/pkgs/container/floci"><img src="https://img.shields.io/badge/container-GHCR-blue" alt="Container Images"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
   <a href="https://github.com/floci-io/floci/stargazers"><img src="https://img.shields.io/github/stars/floci-io/floci?style=flat" alt="GitHub Stars"></a>
 </p>
@@ -49,16 +48,23 @@ Floci is the AWS member of the [Floci](https://github.com/floci-io) emulator fam
 
 ## Quick Start
 
-The fastest way to run Floci is with the official [CLI](https://github.com/floci-io/floci-cli)
+This is **Stephen Hoos's security-hardened fork** of [upstream Floci](https://github.com/floci-io/floci).
+Ready-to-run Docker images for Intel/AMD and Apple Silicon/ARM, plus complete Java downloads,
+are published at [Releases](https://github.com/stephenhoos/floci/releases/latest).
+No compilation is required. See [Installation](docs/getting-started/installation.md).
+
+Use the official [CLI](https://github.com/floci-io/floci-cli) with this fork's image:
 
 ```bash
-floci start
+brew install floci-io/floci/floci
+floci start --detach --image ghcr.io/stephenhoos/floci:latest
 ```
 
-Export the AWS environment variables:
+The `--detach` option avoids the CLI's 30-second startup timeout. Wait for
+`curl -f http://localhost:4566/_floci/health` to succeed, then export the AWS environment variables:
 
 ```bash
-eval $(floci env)
+eval "$(floci env)"
 ```
 
 Use your existing AWS tools normally:
@@ -91,9 +97,9 @@ Create a `compose.yaml` file:
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
 ```
 
 Start Floci:
@@ -123,12 +129,24 @@ Update your image name:
 image: hectorvent/floci:latest
 
 # After
-image: floci/floci:latest
+image: ghcr.io/stephenhoos/floci:latest
 ```
 
 The old `hectorvent/floci` repository no longer receives updates.
 
 </details>
+
+For Lambda, databases and other Docker-backed workloads, download
+[compose.yaml](https://github.com/stephenhoos/floci/releases/latest/download/compose.yaml)
+and run `docker compose up -d`. This trusted development profile mounts the Docker socket.
+Privileged EC2/EKS workloads require the explicit opt-in described in
+[Security hardening](docs/configuration/security-hardening.md).
+
+These releases use Java 25 inside the Docker image. Both `latest` and `latest-compat`
+include AWS CLI, `awslocal`, Python and boto3. Allow up to two minutes for a first start
+without a Docker socket; upstream native-image performance figures do not apply to this build.
+
+For the safer defaults and opt-in settings for privileged workloads, image restrictions, browser access and an independent API key, see [Security hardening](docs/configuration/security-hardening.md).
 
 ## Web Console
 
@@ -143,9 +161,9 @@ Starting a container needs the Docker socket:
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
@@ -156,7 +174,7 @@ services:
 | `FLOCI_SERVICES_UI_IMAGE` | `floci/floci-ui:latest` | Console image to run |
 | `FLOCI_SERVICES_UI_CONTAINER_NAME` | `floci-ui` | Name of the sidecar container |
 | `FLOCI_SERVICES_UI_PORT` | `4500` | Host port the console is published on |
-| `FLOCI_SERVICES_UI_BIND_ADDRESS` | _(none)_ | Host interface that port is published on. Unset publishes on every interface; set `127.0.0.1` when Floci's own port is loopback-only |
+| `FLOCI_SERVICES_UI_BIND_ADDRESS` | `127.0.0.1` | Host interface that the console port is published on |
 | `FLOCI_SERVICES_UI_KEEP_RUNNING_ON_SHUTDOWN` | `false` | Leave the sidecar running when Floci stops |
 
 ### Running a different console
@@ -220,7 +238,7 @@ Terraform can provision AWS-shaped resources locally through Floci using the sta
 <details>
 <summary><strong>Fast enough for CI</strong></summary>
 
-The native image starts in milliseconds and keeps idle memory low, making it practical for local development and test pipelines.
+Upstream's native image starts in milliseconds and keeps idle memory low. This fork currently publishes JVM builds; native builds remain available from source.
 
 </details>
 
@@ -428,10 +446,10 @@ Docker-backed services require the Docker socket:
 
 ```bash
 docker run -d --name floci \
-  -p 4566:4566 \
+  -p 127.0.0.1:4566:4566 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -u root \
-  floci/floci:latest
+  ghcr.io/stephenhoos/floci:latest
 ```
 
 ### Overriding default images
@@ -650,9 +668,11 @@ aws --endpoint-url http://localhost:4566 s3 ls
 
 ## Testcontainers
 
-Floci has Testcontainers modules for starting isolated Floci instances directly from tests. This avoids shared state, manual daemon setup, and port conflicts.
+Floci has Testcontainers modules for starting isolated Floci instances directly from tests. The examples below explicitly select this fork's image. This avoids shared state, manual daemon setup, and port conflicts.
 
-For Testcontainers 1.x, use the versions as indicated in the table below.
+For Java, import `org.testcontainers.utility.DockerImageName` and mark the fork image as
+compatible with `floci/floci`, as shown below. Allow a two-minute startup timeout for
+socket-free JVM instances. For Testcontainers 1.x, use the versions in the table below.
 
 | Language | Package | Latest | Registry | Source |
 |---|---|---|---|---|
@@ -679,7 +699,8 @@ For Testcontainers 1.x, use the versions as indicated in the table below.
 class S3IntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer();
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     @Test
     void shouldCreateBucket() {
@@ -715,7 +736,8 @@ describe("S3", () => {
   let floci: FlociContainer;
 
   beforeAll(async () => {
-    floci = await new FlociContainer().start();
+    floci = await new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci")).start();
   });
 
   afterAll(async () => {
@@ -753,7 +775,7 @@ from floci import FlociContainer
 
 
 def test_s3_create_bucket():
-    with FlociContainer() as floci:
+    with FlociContainer(image="ghcr.io/stephenhoos/floci:2.2.0-hoos.1") as floci:
         s3 = boto3.client(
             "s3",
             endpoint_url=floci.get_endpoint(),
@@ -792,10 +814,10 @@ Floci is a drop-in replacement for LocalStack Community. The port, credentials, 
 image: localstack/localstack
 
 # After, standard image
-image: floci/floci:latest
+image: ghcr.io/stephenhoos/floci:latest
 
 # After, if init scripts need AWS CLI or boto3
-image: floci/floci:latest-compat
+image: ghcr.io/stephenhoos/floci:latest-compat
 ```
 
 LocalStack environment variables are translated automatically:
@@ -814,39 +836,24 @@ See the [full migration guide](https://floci.io/floci/getting-started/migrate-fr
 
 ## Image Tags
 
-Every tag combines a variant and a channel.
+Images are published to `ghcr.io/stephenhoos/floci` for `linux/amd64` and `linux/arm64`.
 
-| Channel | Standard | Baseline (ARM64 only) | Compat with AWS CLI and boto3 |
-|---|---|---|---|
-| Release, floating | `latest` | `latest-baseline` | `latest-compat` |
-| Release, pinned | `x.y.z` | `x.y.z-baseline` | `x.y.z-compat` |
-| Nightly, floating | `nightly` | — | `nightly-compat` |
-| Nightly, dated | `nightly-mmddyyyy` | — | `nightly-mmddyyyy-compat` |
+| Tag | Contents |
+|---|---|
+| `latest` | Latest fork release, Java 25 runtime and AWS tools included |
+| `2.2.0-hoos.1` | Pinned security-hardened release |
+| `latest-compat`, `2.2.0-hoos.1-compat` | Aliases of the corresponding JVM images |
 
-Use `latest` for stable releases, a pinned version for reproducible builds, and `nightly` to track `main`.
+Choose the pinned version for reproducible builds. This fork does not publish nightly or native baseline tags.
 
 ```yaml
-# Recommended
-image: floci/floci:latest
-
-# Includes AWS CLI and boto3
-image: floci/floci:latest-compat
-
-# ARM64 baseline for Raspberry Pi 4 / pre-LSE cores
-image: floci/floci:latest-baseline
-
-# Pinned release
-image: floci/floci:x.y.z
-
-# Track main
-image: floci/floci:nightly
+image: ghcr.io/stephenhoos/floci:2.2.0-hoos.1
 ```
 
-### Release train
-
-Stable releases ship on the **1st and 3rd Tuesday of each month**. Between trains, `floci/floci:nightly` tracks `main`. Every merged fix is available the next day, and dated `nightly-mmddyyyy` tags let you pin a specific night's build.
-
-Versions are derived from Conventional Commits by [semantic-release](https://github.com/semantic-release/semantic-release); `CHANGELOG.md` is generated, never hand-edited. Releases are cut from `main` only: there are no maintenance branches.
+Fork releases are published by [Publish Hoos builds](.github/workflows/publish-fork.yml)
+when a `v<version>-hoos.<revision>` tag is pushed. Each release includes portable Java archives,
+Docker archives for both architectures, a ready-to-run Compose file, SHA-256 checksums,
+and signed container images with provenance and SBOMs.
 
 ## Configuration
 
@@ -873,9 +880,9 @@ When your application runs in a different container, set `FLOCI_HOSTNAME` to the
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       - FLOCI_HOSTNAME=floci
 

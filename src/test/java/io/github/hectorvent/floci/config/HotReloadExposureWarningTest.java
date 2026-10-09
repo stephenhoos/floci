@@ -28,16 +28,16 @@ class HotReloadExposureWarningTest {
 
     @Test
     void warnsWhenHotReloadIsEnabledWithNoAllowList() {
-        assertTrue(HotReloadExposureWarning.hotReloadAcceptsAnyPath(configWith(true, null)));
+        assertTrue(HotReloadExposureWarning.hotReloadNeedsAllowedPaths(configWith(true, null)));
     }
 
     @Test
     void staysQuietWhenAnAllowListIsSet() {
-        assertFalse(HotReloadExposureWarning.hotReloadAcceptsAnyPath(configWith(true, List.of("/home/ci/code"))));
+        assertFalse(HotReloadExposureWarning.hotReloadNeedsAllowedPaths(configWith(true, List.of("/home/ci/code"))));
     }
 
     @Test
     void staysQuietWhenHotReloadIsDisabled() {
-        assertFalse(HotReloadExposureWarning.hotReloadAcceptsAnyPath(configWith(false, null)));
+        assertFalse(HotReloadExposureWarning.hotReloadNeedsAllowedPaths(configWith(false, null)));
     }
 }

@@ -5,7 +5,7 @@ Floci supports optional TLS, enabling `https://` for all REST/JSON/Query endpoin
 ## Quick Start
 
 ```bash
-docker run -e FLOCI_TLS_ENABLED=true -p 4566:4566 floci/floci:latest
+docker run -e FLOCI_TLS_ENABLED=true -p 127.0.0.1:4566:4566 ghcr.io/stephenhoos/floci:latest
 ```
 
 Then point your SDK at `https://localhost:4566` and trust Floci's local CA in the processes that talk to it. Every certificate Floci issues (its HTTPS endpoint, every ACM certificate and every IoT device certificate) chains to that one CA:
@@ -32,12 +32,7 @@ The download above is plain HTTP and carries no proof of who sent it, which is f
 openssl x509 -in floci-root-ca.pem -noout -fingerprint -sha256
 ```
 
-Installing the CA into the operating system trust store (macOS `security add-trusted-cert`, Linux `update-ca-certificates`) also works and is what Safari, Chrome and Go on macOS need, but understand what it does: every process on the machine then trusts anything signed by the key in `{persistent-path}/tls/floci-root-ca.key`. Keep that file private, treat the CA as a dev-machine secret, and remove it from the store when you stop using Floci:
-
-```bash
-# macOS login keychain; remove later with: security delete-certificate -c "Floci Local CA"
-security add-trusted-cert -r trustRoot -k ~/Library/Keychains/login.keychain-db floci-root-ca.pem
-```
+Do not install the generated CA into the operating system trust store. Its private key is kept with emulator data and its certificates intentionally emulate AWS certificate services. System trust would let that key authenticate arbitrary domains to unrelated applications. Use process-specific trust, an isolated browser profile with a dedicated certificate store, or a separately managed certificate for the emulator's HTTPS listener. Keep `floci-root-ca.key` private and remove previously installed Floci CA certificates from shared trust stores.
 
 Disabling verification (`--no-verify-ssl`, `verify=False`, `NODE_TLS_REJECT_UNAUTHORIZED=0`) still works but is no longer needed.
 
@@ -74,12 +69,12 @@ If you set `FLOCI_HOSTNAME` or use a custom host in `FLOCI_BASE_URL`, the server
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: ghcr.io/stephenhoos/floci:latest
     environment:
       FLOCI_TLS_ENABLED: "true"
       FLOCI_HOSTNAME: floci
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
 
   app:
     environment:
@@ -111,8 +106,8 @@ docker run \
   -e FLOCI_TLS_CERT_PATH=/certs/server.crt \
   -e FLOCI_TLS_KEY_PATH=/certs/server.key \
   -v ./certs:/certs:ro \
-  -p 4566:4566 \
-  floci/floci:latest
+  -p 127.0.0.1:4566:4566 \
+  ghcr.io/stephenhoos/floci:latest
 ```
 
 When custom certificate paths are provided, `FLOCI_TLS_SELF_SIGNED` is ignored and the HTTPS server uses your certificate; no server certificate is generated. `GET /_floci/ca.pem` then returns a PEM bundle: the certificates in your certificate file first (a private key kept in that file is never served), then Floci's local CA, which is created on first use and signs the certificates Floci itself issues (IoT device certificates). Put the CA or the full chain in your certificate file if clients fetch their trust anchor from Floci; a bare leaf only lets them pin that one certificate.

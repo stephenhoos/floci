@@ -81,6 +81,7 @@ nav:
     - Migrate from LocalStack: getting-started/migrate-from-localstack.md
   - Configuration:
     - Environment Variables: configuration/environment-variables.md
+    - Security Hardening: configuration/security-hardening.md
     - Docker Images: configuration/docker-images.md
     - Docker Compose: configuration/docker-compose.md
     - Docker Configuration: configuration/docker.md

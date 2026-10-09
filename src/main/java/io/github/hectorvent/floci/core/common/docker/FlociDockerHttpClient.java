@@ -104,6 +104,12 @@ public final class FlociDockerHttpClient implements DockerHttpClient {
         // See https://github.com/docker-java/docker-java/pull/1590#issuecomment-870581289
         connectionManager.setDefaultSocketConfig(SocketConfig.copy(SocketConfig.DEFAULT)
                 .setSoTimeout(Timeout.ZERO_MILLISECONDS)
+                // Unix sockets have no TCP keep-alive options. Disabling extended defaults also
+                // avoids reflective option setting on docker-java's socket in native images.
+                .setSoKeepAlive(false)
+                .setTcpKeepIdle(-1)
+                .setTcpKeepInterval(-1)
+                .setTcpKeepCount(-1)
                 .build());
         connectionManager.setMaxTotal(maxConnections);
         connectionManager.setDefaultMaxPerRoute(maxConnections);

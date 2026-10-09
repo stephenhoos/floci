@@ -68,6 +68,11 @@ public class NetworkExposureGuard {
     }
 
     static void requireConsent(String host, EmulatorConfig.SecurityConfig security) {
+        security.apiKey().ifPresent(key -> {
+            if (key.length() < 32) {
+                throw new IllegalStateException("floci.security.api-key must contain at least 32 characters.");
+            }
+        });
         if (!isValidHost(host)) {
             throw new IllegalStateException("Refusing to listen on malformed host: " + host);
         }

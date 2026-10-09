@@ -24,7 +24,7 @@ from floci import FlociContainer
 
 
 def test_s3_create_bucket():
-    with FlociContainer() as floci:
+    with FlociContainer(image="ghcr.io/stephenhoos/floci:2.2.0-hoos.1") as floci:
         s3 = boto3.client(
             "s3",
             endpoint_url=floci.get_endpoint(),
@@ -51,7 +51,7 @@ from floci import FlociContainer
 
 @pytest.fixture(scope="session")
 def floci():
-    with FlociContainer() as container:
+    with FlociContainer(image="ghcr.io/stephenhoos/floci:2.2.0-hoos.1") as container:
         yield container
 
 
@@ -90,7 +90,7 @@ from floci import FlociContainer
 
 @pytest.fixture(scope="session")
 def floci():
-    with FlociContainer() as container:
+    with FlociContainer(image="ghcr.io/stephenhoos/floci:2.2.0-hoos.1") as container:
         yield container
 
 
@@ -130,7 +130,7 @@ from floci import FlociContainer
 
 @pytest.fixture(scope="session")
 def floci():
-    with FlociContainer() as container:
+    with FlociContainer(image="ghcr.io/stephenhoos/floci:2.2.0-hoos.1") as container:
         yield container
 
 
@@ -196,7 +196,7 @@ from floci import FlociContainer
 
 @pytest.fixture(scope="session")
 def floci():
-    with FlociContainer() as container:
+    with FlociContainer(image="ghcr.io/stephenhoos/floci:2.2.0-hoos.1") as container:
         yield container
 
 
