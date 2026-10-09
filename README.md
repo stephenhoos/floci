@@ -670,7 +670,9 @@ aws --endpoint-url http://localhost:4566 s3 ls
 
 Floci has Testcontainers modules for starting isolated Floci instances directly from tests. The examples below explicitly select this fork's image. This avoids shared state, manual daemon setup, and port conflicts.
 
-For Testcontainers 1.x, use the versions as indicated in the table below.
+For Java, import `org.testcontainers.utility.DockerImageName` and mark the fork image as
+compatible with `floci/floci`, as shown below. Allow a two-minute startup timeout for
+socket-free JVM instances. For Testcontainers 1.x, use the versions in the table below.
 
 | Language | Package | Latest | Registry | Source |
 |---|---|---|---|---|
@@ -697,7 +699,8 @@ For Testcontainers 1.x, use the versions as indicated in the table below.
 class S3IntegrationTest {
 
     @Container
-    static FlociContainer floci = new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1");
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci"));
 
     @Test
     void shouldCreateBucket() {
@@ -733,7 +736,8 @@ describe("S3", () => {
   let floci: FlociContainer;
 
   beforeAll(async () => {
-    floci = await new FlociContainer("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").start();
+    floci = await new FlociContainer(
+            DockerImageName.parse("ghcr.io/stephenhoos/floci:2.2.0-hoos.1").asCompatibleSubstituteFor("floci/floci")).start();
   });
 
   afterAll(async () => {
