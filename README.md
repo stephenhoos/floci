@@ -57,10 +57,11 @@ Use the official [CLI](https://github.com/floci-io/floci-cli) with this fork's i
 
 ```bash
 brew install floci-io/floci/floci
-floci start --image ghcr.io/stephenhoos/floci:latest
+floci start --detach --image ghcr.io/stephenhoos/floci:latest
 ```
 
-Export the AWS environment variables:
+The `--detach` option avoids the CLI's 30-second startup timeout. Wait for
+`curl -f http://localhost:4566/_floci/health` to succeed, then export the AWS environment variables:
 
 ```bash
 eval "$(floci env)"

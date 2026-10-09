@@ -29,7 +29,9 @@ docker compose up -d
 The file uses a pinned fork image, local host ports, a named data volume and a shared
 Docker network. It mounts the Docker socket for Lambda, RDS, ECS and other workloads,
 as upstream's full development setup does. Run only trusted workloads with this profile.
-For Colima or a rootless daemon, set `FLOCI_DOCKER_SOCKET` to the host's actual Unix socket path.
+For a rootless daemon, set `FLOCI_DOCKER_SOCKET` to its Unix socket path as seen by the Docker daemon.
+On Colima, keep the default `/var/run/docker.sock`: that path belongs to the Docker VM.
+The Mac's `~/.colima/.../docker.sock` is the client's connection endpoint, not the VM's mount source.
 For API-only use, the socket-free `docker run` command above is sufficient.
 
 Privileged containers remain disabled. EC2/EKS and other workloads that need privilege
@@ -43,11 +45,14 @@ Install the upstream CLI and select this fork's image:
 
 ```bash
 brew install floci-io/floci/floci
-floci start --image ghcr.io/stephenhoos/floci:latest
+floci start --detach --image ghcr.io/stephenhoos/floci:latest
 eval "$(floci env)"
 ```
 
-The emulator image selection is the only change to upstream's CLI flow. On Linux/Windows,
+`--detach` avoids the official CLI's 30-second readiness timeout. Wait until
+`curl -f http://localhost:4566/_floci/health` succeeds before running AWS commands.
+On Colima, prefer the Compose setup for Docker-backed workloads because the upstream CLI
+mounts its client socket path, which may not exist inside the Docker VM. On Linux/Windows,
 install the official CLI using its [instructions](https://github.com/floci-io/floci-cli#installation),
 then pass the same `--image` option. The CLI's downloadable `floci.jar` is the CLI, not the emulator.
 

@@ -22,7 +22,10 @@ Allow up to two minutes for a socket-free first start. Use the attached `compose
 docker compose up -d
 ```
 
-The official Floci CLI can select this image with `floci start --image ghcr.io/stephenhoos/floci:{version}`.
+The official Floci CLI can select this image with `floci start --detach --image ghcr.io/stephenhoos/floci:{version}`.
+
+Wait for `curl -f http://localhost:4566/_floci/health` to succeed before AWS calls.
+For Docker-backed workloads on Colima, prefer Compose with the VM's default `/var/run/docker.sock`.
 
 ### Java download (no compilation)
 
