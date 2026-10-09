@@ -116,6 +116,9 @@ jobs:
             || { echo "::error::test class list from src/test/java differs from target/test-classes:"; diff all-classes.txt "$RUNNER_TEMP/compiled-classes.txt" | head -50; exit 1; }
 
       - name: Run tests
+        # Disposable CI runners deliberately exercise privileged Docker workloads.
+        env:
+          FLOCI_SECURITY_ALLOW_PRIVILEGED_CONTAINERS: "true"
         run: >
           ./mvnw surefire:test -B
           -Dsurefire.includesFile="$GITHUB_WORKSPACE/shard.txt"

@@ -246,6 +246,28 @@ public interface EmulatorConfig {
     }
 
     interface SecurityConfig {
+        /** Optional transport credential, independent of the emulated AWS credentials. */
+        Optional<String> apiKey();
+
+        @WithDefault("true")
+        boolean browserRequestProtection();
+
+        /** Additional exact hostnames under which a browser may address the emulator. */
+        Optional<List<String>> allowedBrowserHosts();
+
+        @WithDefault("false")
+        boolean allowPrivilegedContainers();
+
+        /** Exact image references approved by the operator. Empty preserves local development. */
+        Optional<List<String>> allowedContainerImages();
+
+        @WithDefault("127.0.0.1")
+        String containerPublishHost();
+
+        /** Local integrations remain usable; metadata addresses are always rejected. */
+        @WithDefault("true")
+        boolean allowPrivateOutboundTargets();
+
         Optional<List<String>> extraCorsAllowedOrigins();
         Optional<List<String>> extraCorsAllowedHeaders();
         Optional<List<String>> extraCorsExposeHeaders();
@@ -2971,7 +2993,7 @@ public interface EmulatorConfig {
              * Optional allow-list of absolute directories. When set, the S3Key supplied to a
              * hot-reload CreateFunction/UpdateFunctionCode must be one of these directories or
              * inside one, compared after {@code .} and {@code ..} segments are resolved.
-             * Unset = all absolute paths are accepted.
+             * An allow-list is required when hot reload is enabled.
              *
              * Env var: FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS
              */

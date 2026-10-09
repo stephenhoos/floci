@@ -79,9 +79,9 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
-      - "6379-6399:6379-6399"   # ElastiCache
-      - "7001-7099:7001-7099"   # RDS
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:6379-6399:6379-6399"   # ElastiCache
+      - "127.0.0.1:7001-7099:7001-7099"   # RDS
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 ```

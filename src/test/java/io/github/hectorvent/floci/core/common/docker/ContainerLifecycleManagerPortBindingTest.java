@@ -32,10 +32,10 @@ import static org.mockito.Mockito.when;
 class ContainerLifecycleManagerPortBindingTest {
 
     @Test
-    void aPlainPortBindingPublishesOnEveryInterface() {
+    void aPlainPortBindingPublishesOnLoopbackByDefault() {
         Ports.Binding binding = bindingFor(builder -> builder.withPortBinding(8080, 18_080), 8080);
 
-        assertNull(binding.getHostIp(), "Docker's own default is every interface");
+        assertEquals("127.0.0.1", binding.getHostIp());
         assertEquals("18080", binding.getHostPortSpec());
     }
 
@@ -66,11 +66,11 @@ class ContainerLifecycleManagerPortBindingTest {
     }
 
     @Test
-    void aBlankHostIpFallsBackToDockersOwnDefault() {
+    void aBlankHostIpKeepsTheSafeDefault() {
         Ports.Binding binding = bindingFor(
                 builder -> builder.withPortBinding(4500, 4500, "  "), 4500);
 
-        assertNull(binding.getHostIp());
+        assertEquals("127.0.0.1", binding.getHostIp());
     }
 
     @Test
@@ -81,7 +81,7 @@ class ContainerLifecycleManagerPortBindingTest {
         Ports ports = portsOf(spec);
 
         assertEquals("127.0.0.1", only(ports, 4500).getHostIp());
-        assertNull(only(ports, 9000).getHostIp());
+        assertEquals("127.0.0.1", only(ports, 9000).getHostIp());
     }
 
     private static Ports.Binding bindingFor(UnaryOperator<ContainerBuilder.Builder> customizer,

@@ -41,7 +41,7 @@ public class MwaaWebProxy {
     private static final int CLI_WORKER_POOL_SIZE = 4;
 
     private static final List<String> HOP_BY_HOP_HEADERS = List.of(
-            "connection", "keep-alive", "transfer-encoding", "upgrade", "te", "trailers",
+            "x-floci-api-key", "connection", "keep-alive", "transfer-encoding", "upgrade", "te", "trailers",
             "proxy-authorization", "proxy-authenticate");
 
     private final String environmentName;

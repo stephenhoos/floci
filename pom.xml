@@ -16,7 +16,7 @@
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.platform.version>3.39.2</quarkus.platform.version>
-        <jackson.version>2.22.2</jackson.version>
+        <jackson.version>2.22.3</jackson.version>
         <apicurio.version>2.6.13.Final</apicurio.version>
         <everit.json.schema.version>1.14.6</everit.json.schema.version>
         <wire.version>6.4.7</wire.version>
@@ -53,20 +53,17 @@
                 <artifactId>proto-google-common-protos</artifactId>
                 <version>2.49.0</version>
             </dependency>
-            <!-- Matched to httpclient5 5.5.1 (its own declared core). The Quarkus 3.38+ BOM manages
-                 httpcore5 5.4, whose SocketConfig defaults turn on TCP keep-alive with a keep-idle of 5 s;
-                 httpclient5 then sets that extended option through reflection on docker-java's UnixSocket,
-                 which is unregistered in the native image, and every Docker call fails with
-                 "Failure setting extended socket option". docker-java is the only consumer of httpcore5. -->
+            <!-- Security-fixed Apache HTTP components. FlociDockerHttpClient explicitly disables
+                 extended TCP keep-alive options on docker-java's native UnixSocket transport. -->
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5</artifactId>
-                <version>5.3.6</version>
+                <version>5.4.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
-                <version>5.3.6</version>
+                <version>5.4.3</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -201,7 +198,12 @@
             <artifactId>httpclient5</artifactId>
             <!-- Held at 5.5.x: 5.6 adds commons-compress content decoding, and its XZ codec
                  needs org.tukaani:xz at native link time (GraalVM link-at-build-time). -->
-            <version>5.5.1</version>
+            <version>5.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tukaani</groupId>
+            <artifactId>xz</artifactId>
+            <version>1.12</version>
         </dependency>
         <!-- Explicit overrides for Quarkus BOM which pins these at 3.7.0;
              docker-java-core:3.7.1 requires 3.7.1 for ImageHistoryCmd and ExportContainerCmd -->

@@ -1,6 +1,8 @@
 package io.github.hectorvent.floci.services.cloudformation;
 
+import io.github.hectorvent.floci.testing.LambdaCodeSourcesProfile;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +19,7 @@ import static org.hamcrest.Matchers.not;
  * the test is Docker-free. The test profile enables hot-reload.
  */
 @QuarkusTest
+@TestProfile(LambdaCodeSourcesProfile.class)
 class CloudFormationLambdaHotReloadIntegrationTest {
 
     private static final String CFN_AUTH =
@@ -27,7 +30,7 @@ class CloudFormationLambdaHotReloadIntegrationTest {
         String suffix = Long.toString(System.nanoTime(), 36);
         String stackName = "cfn-hot-reload-" + suffix;
         String fnName = "hot-reload-fn-" + suffix;
-        String hostPath = "/tmp/floci-cfn-hot-reload-" + suffix;
+        String hostPath = "/home/ci/code/floci-cfn-hot-reload-" + suffix;
 
         createStack(stackName, template(fnName, hostPath));
 

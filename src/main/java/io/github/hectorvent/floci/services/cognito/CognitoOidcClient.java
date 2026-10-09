@@ -2,7 +2,9 @@ package io.github.hectorvent.floci.services.cognito;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.hectorvent.floci.config.EmulatorConfig;
 import io.github.hectorvent.floci.core.common.AwsException;
+import io.github.hectorvent.floci.core.common.ScreenedHttpClient;
 import io.github.hectorvent.floci.services.cognito.model.IdentityProvider;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -22,15 +24,18 @@ import java.util.function.Function;
 @ApplicationScoped
 public class CognitoOidcClient {
 
-    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     @Inject
+    public CognitoOidcClient(ObjectMapper objectMapper, EmulatorConfig config) {
+        this(new ScreenedHttpClient(config.security().allowPrivateOutboundTargets()), objectMapper);
+    }
+
     public CognitoOidcClient(ObjectMapper objectMapper) {
-        this(HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build(), objectMapper);
+        this(new ScreenedHttpClient(true), objectMapper);
     }
 
     CognitoOidcClient(HttpClient httpClient, ObjectMapper objectMapper) {

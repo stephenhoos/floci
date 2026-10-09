@@ -277,11 +277,11 @@ Hot-reload must be enabled explicitly. By default it is disabled so that `S3Buck
 ```bash
 FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED=true
 
-# Optional: restrict which host paths may be bind-mounted (comma-separated)
-FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS=/home/user/projects,/tmp
+# Required: approve only the code directories that may be bind-mounted (comma-separated)
+FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS=/home/user/projects
 ```
 
-An `S3Key` is accepted when it is one of the listed directories or inside one. `.` and `..` segments are resolved first, so `/home/user/projects/../secrets` and a sibling such as `/home/user/projects-old` are rejected. Symbolic links on the Docker host are not resolved by Floci. A path containing `:` is rejected. Without an allow-list any absolute host path is accepted except the host root, `/var`, `/proc`, and anything under `/run` or `/var/run`, where the Docker socket lives or can be reached. Floci logs a warning at startup when hot-reload is enabled without an allow-list.
+An `S3Key` is accepted when it is one of the approved directories or inside one. Without an allow-list, hot-reload requests are rejected. Floci resolves `.` and `..` segments and symbolic links visible to its process before checking containment. Sibling prefixes, paths containing `:`, the host root, `/proc` and paths exposing known Docker sockets are rejected, even when a socket directory appears in the allow-list. With a remote Docker daemon or Floci running in a container, the daemon can see host paths and links Floci cannot see. Approve a dedicated code directory and restrict changes to its contents.
 
 **Docker Compose setup**: enable the feature and share the Docker socket:
 
@@ -292,6 +292,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED: "true"
+      FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS: /home/user/projects
 ```
 
 ### CloudFormation and SAM
@@ -872,7 +873,7 @@ When `aws-config-path` is set:
 - `AWS_SHARED_CREDENTIALS_FILE` and `AWS_CONFIG_FILE` env vars are set so the SDK discovers credentials regardless of the container's HOME directory
 - No `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` env vars are injected
 
-When unset (default), Floci injects execution-role credentials for a known role. For an unknown role, Floci reads credentials from its own environment and falls back to `test`/`test`/`test`.
+When unset (default), Floci injects execution-role credentials for a known role. For an unknown role, Floci uses the owning account ID with the `test` secret and token, or `test`/`test`/`test` when the owner is unavailable. Ambient credentials from the Floci process are never copied into launched workloads.
 
 !!! tip "Routing specific services to real AWS"
     To keep some services on Floci while others hit real AWS, clear the global endpoint and set service-specific overrides in your function's `--environment`:
@@ -885,25 +886,8 @@ When unset (default), Floci injects execution-role credentials for a known role.
 
     The AWS SDK supports `AWS_ENDPOINT_URL_<SERVICE>` natively. Services without an override will use real AWS endpoints.
 
-!!! note "Credential passthrough without mounting"
-    For functions whose execution role is unknown to Floci, you can pass static credentials to Floci's environment directly. When `aws-config-path` is unset, Floci forwards its own `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN` env vars into those Lambda containers:
-
-    ```yaml
-    environment:
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
-    ```
-
-    A known execution role takes precedence over `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN` values in the function environment. Use `aws-config-path` when the function must use mounted credentials instead of its emulated execution role.
-
-    Passthrough is on whenever those three variables are set in Floci's own environment, so a
-    Floci started from a shell that exports real AWS credentials (`aws-vault exec`, a sourced
-    credentials file, a CI runner) hands them to any function whose role it does not know. An
-    `AWS_PROFILE` or an `aws sso login` alone does not do this: those populate config and cache
-    files, not the environment. Floci logs a `WARN` carrying the forwarded access-key prefix the
-    first time it happens. Give the function a role Floci knows, or set `aws-config-path`, to keep
-    host credentials out of the container.
+!!! note "Explicit credential access"
+    A mounted AWS configuration directory intentionally grants functions access to its credentials. Use a dedicated development account and limited permissions for hybrid testing. The same caution applies to real credentials explicitly supplied in a function's environment. The server's own AWS environment is no longer a fallback source for containers.
 
 ### Locally built images
 

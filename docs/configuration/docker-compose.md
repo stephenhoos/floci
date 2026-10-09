@@ -5,7 +5,7 @@ Floci is distributed as a Docker image. All configuration is done through enviro
 ## Quick Start
 
 ```bash
-docker run --rm -p 4566:4566 floci/floci:latest
+docker run --rm -p 127.0.0.1:4566:4566 floci/floci:latest
 ```
 
 That's it. The default configuration works out of the box for most services: SQS, SNS, S3, DynamoDB, SSM, Lambda, API Gateway, Cognito, KMS, Kinesis, Secrets Manager, CloudFormation, Step Functions, IAM, STS, EventBridge, Scheduler, and CloudWatch.
@@ -19,7 +19,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       FLOCI_HOSTNAME: floci
 ```
@@ -33,7 +33,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - floci-data:/app/data
     environment:
@@ -54,9 +54,9 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
-      - "6379-6399:6379-6399"  # ElastiCache proxy ports
-      - "7001-7099:7001-7099"  # RDS proxy ports
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:6379-6399:6379-6399"  # ElastiCache proxy ports
+      - "127.0.0.1:7001-7099:7001-7099"  # RDS proxy ports
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - floci-data:/app/data
@@ -87,7 +87,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       FLOCI_HOSTNAME: floci   # (1)
 
@@ -123,7 +123,7 @@ services:
   floci:
     image: floci/floci:latest-compat
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - ./init/boot.d:/etc/floci/init/boot.d:ro    # before storage loads — no AWS APIs yet
       - ./init/start.d:/etc/floci/init/start.d:ro  # after HTTP server is ready
@@ -149,7 +149,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
 
 steps:
   - name: Run tests

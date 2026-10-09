@@ -22,6 +22,7 @@ import io.github.hectorvent.floci.services.lambda.launcher.ImageCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -54,7 +55,7 @@ class ContainerLifecycleManagerVolumeTest {
     @Mock
     private PortAllocator portAllocator;
 
-    @Mock
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private EmulatorConfig config;
 
     private ContainerLifecycleManager manager;

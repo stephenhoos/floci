@@ -826,7 +826,7 @@ allows both of those on a user-defined network.
 docker network create floci-net
 
 docker run -d --name floci \
-  -p 4566:4566 \
+  -p 127.0.0.1:4566:4566 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --network floci-net \
   -e FLOCI_SERVICES_ECS_DOCKER_NETWORK=floci-net \

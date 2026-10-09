@@ -10,6 +10,7 @@ import io.github.hectorvent.floci.core.common.AwsArnUtils;
 import io.github.hectorvent.floci.core.common.AwsException;
 import io.github.hectorvent.floci.core.common.RegionResolver;
 import io.github.hectorvent.floci.core.common.RequestScopes;
+import io.github.hectorvent.floci.core.common.ScreenedHttpClient;
 import io.github.hectorvent.floci.core.common.SsrfProtection;
 import io.github.hectorvent.floci.services.batch.BatchService;
 import io.github.hectorvent.floci.services.ecs.EcsJsonHandler;
@@ -96,7 +97,7 @@ public class EventBridgeInvoker {
                               EmulatorConfig config) {
         this(lambdaService, sqsService, snsService, batchService, firehoseService, eventBridgeService,
                 ecsService, ecsJsonHandler, stepFunctionsService, regionResolver, objectMapper, config,
-                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
+                new ScreenedHttpClient(config.security().allowPrivateOutboundTargets()));
     }
 
     EventBridgeInvoker(LambdaService lambdaService,

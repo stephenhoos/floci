@@ -87,7 +87,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
       - "8182-8282:8182-8282"   # Neptune Gremlin proxy ports
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

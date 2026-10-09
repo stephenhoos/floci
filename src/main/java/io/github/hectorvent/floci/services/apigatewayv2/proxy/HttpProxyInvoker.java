@@ -1,11 +1,13 @@
 package io.github.hectorvent.floci.services.apigatewayv2.proxy;
 
+import io.github.hectorvent.floci.core.common.ScreenedHttpClient;
 import io.github.hectorvent.floci.core.common.SsrfProtection;
 import io.github.hectorvent.floci.services.apigatewayv2.model.Integration;
+import org.apache.hc.client5.http.DnsResolver;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
@@ -53,12 +55,12 @@ public class HttpProxyInvoker {
 
     /** RFC 7230 hop-by-hop headers that must not be forwarded across proxies. */
     private static final Set<String> HOP_BY_HOP = Set.of(
-            "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+            "x-floci-api-key", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
             "te", "trailers", "transfer-encoding", "upgrade", "content-length", "host");
 
     /** Headers java.net.http.HttpClient refuses to set via Builder.header(). */
     private static final Set<String> RESTRICTED = Set.of(
-            "connection", "content-length", "expect", "host", "upgrade");
+            "x-floci-api-key", "connection", "content-length", "expect", "host", "upgrade");
 
     /**
      * Per-integration transport settings.
@@ -77,11 +79,7 @@ public class HttpProxyInvoker {
     // Pin to HTTP/1.1: the default HTTP_2 setting attempts cleartext-HTTP/2 negotiation
     // against http:// backends, which hangs against plain HTTP/1.1 servers (notably the
     // in-JVM Vertx HttpServer used by ELBv2 listeners for HttpAlbIntegration).
-    private final HttpClient client = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(10))
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .build();
+    private final HttpClient client;
 
     /** Built on first use: an integration opting out of TLS verification is the exception. */
     private volatile HttpClient insecureClient;
@@ -104,19 +102,8 @@ public class HttpProxyInvoker {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustManagers, new SecureRandom());
             // Hostname verification stays on. insecureSkipVerification waives only the "issued by a
-            // supported CA" check; AWS documents that it still verifies the hostname, so a
-            // certificate for the wrong host must fail here exactly as it would in AWS. Setting this
-            // explicitly matters: SSLParameters defaults the algorithm to null, so handing
-            // HttpClient a fresh instance without it would silently disable the check.
-            SSLParameters sslParameters = new SSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            return HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .followRedirects(HttpClient.Redirect.NEVER)
-                    .sslContext(sslContext)
-                    .sslParameters(sslParameters)
-                    .build();
+            // supported CA" check. Apache still verifies the hostname.
+            return new ScreenedHttpClient(allowPrivateTargets, dnsResolver(), sslContext);
         } catch (GeneralSecurityException e) {
             LOG.warnv("Could not build insecure TLS client, falling back to verified: {0}", e.getMessage());
             return client;
@@ -275,13 +262,28 @@ public class HttpProxyInvoker {
     }
 
     private final HostResolver resolver;
+    private final boolean allowPrivateTargets;
 
     public HttpProxyInvoker() {
-        this(InetAddress::getAllByName);
+        this(InetAddress::getAllByName, ConfigProvider.getConfig()
+                .getOptionalValue("floci.security.allow-private-outbound-targets", Boolean.class).orElse(true));
     }
 
     HttpProxyInvoker(HostResolver resolver) {
+        this(resolver, true);
+    }
+
+    HttpProxyInvoker(HostResolver resolver, boolean allowPrivateTargets) {
         this.resolver = resolver;
+        this.allowPrivateTargets = allowPrivateTargets;
+        this.client = new ScreenedHttpClient(allowPrivateTargets, dnsResolver(), null);
+    }
+
+    private DnsResolver dnsResolver() {
+        return new DnsResolver() {
+            @Override public InetAddress[] resolve(String host) throws UnknownHostException { return resolver.resolve(host); }
+            @Override public String resolveCanonicalHostname(String host) { return host; }
+        };
     }
 
     public ProxyResult invoke(Integration integration, RequestContext ctx) {
@@ -324,7 +326,7 @@ public class HttpProxyInvoker {
         if (finalUrl.startsWith("http://") && (hasHeader(builder, "Host") || isNamedHost(finalUrl))) {
             try {
                 return invokeHttpPinned(finalUrl, method, builder, options.timeout());
-            } catch (PinnedHttpClient.ResponseTooLargeException ignored) {
+            } catch (PinnedHttpClient.ResponseTooLargeException | ScreenedHttpClient.ResponseTooLargeException ignored) {
                 return tooLargeResult();
             } catch (Exception e) {
                 LOG.warnv("HTTP_PROXY backend call failed: {0}", e.getMessage());
@@ -374,7 +376,7 @@ public class HttpProxyInvoker {
                 respHeaders.put(e.getKey(), List.copyOf(e.getValue()));
             }
             return new ProxyResult(resp.statusCode(), respHeaders, body);
-        } catch (PinnedHttpClient.ResponseTooLargeException ignored) {
+        } catch (PinnedHttpClient.ResponseTooLargeException | ScreenedHttpClient.ResponseTooLargeException ignored) {
             return tooLargeResult();
         } catch (Exception e) {
             LOG.warnv("HTTP_PROXY backend call failed: {0}", e.getMessage());
@@ -386,7 +388,15 @@ public class HttpProxyInvoker {
         if (host == null || host.isBlank()) {
             throw new IOException("integration URI has no host");
         }
-        return SsrfProtection.rejectMetadataAddresses(resolver.resolve(host), host);
+        InetAddress[] addresses = SsrfProtection.rejectMetadataAddresses(resolver.resolve(host), host);
+        if (!allowPrivateTargets) {
+            for (InetAddress address : addresses) {
+                if (SsrfProtection.isBlockedAddress(address)) {
+                    throw new IOException("integration URI resolves to a blocked private address");
+                }
+            }
+        }
+        return addresses;
     }
 
     private static boolean isNamedHost(String url) {

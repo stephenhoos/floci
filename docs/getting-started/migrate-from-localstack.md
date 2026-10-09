@@ -11,7 +11,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       # These LocalStack vars are automatically translated — no extra config needed:
       PERSISTENCE: "1"                      # → FLOCI_STORAGE_MODE=persistent
@@ -178,7 +178,7 @@ services:
   localstack:
     image: localstack/localstack
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       LOCALSTACK_HOST: localstack
       PERSISTENCE: "1"
@@ -194,7 +194,7 @@ services:
   floci:
     image: floci/floci:latest-compat  # (1)
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       LOCALSTACK_HOST: floci          # translated automatically — no rename needed
       PERSISTENCE: "1"

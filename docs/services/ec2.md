@@ -930,7 +930,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
       - "9169:9169"   # IMDS — expose if containers need to reach it externally
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

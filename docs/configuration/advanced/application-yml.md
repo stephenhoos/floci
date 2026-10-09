@@ -103,6 +103,15 @@ floci:
     # Via env var: FLOCI_DNS_SPOOF_AWS_ENDPOINTS=true
     spoof-aws-endpoints: false
 
+  security:
+    # api-key: ""                            # At least 32 characters; send X-Floci-Api-Key
+    browser-request-protection: true
+    # allowed-browser-hosts: [emulator.example]
+    allow-privileged-containers: false
+    container-publish-host: 127.0.0.1
+    allow-private-outbound-targets: true
+    # allowed-container-images: [repository@sha256:digest]
+
   auth:
     validate-signatures: false               # Set to true to verify S3 SigV4 signatures (header, presigned URL, presigned POST)
     presign-secret: local-emulator-secret    # HMAC secret for S3 pre-signed URL verification
@@ -174,7 +183,7 @@ floci:
       unreserved-concurrency-min: 100         # Minimum unreserved capacity PutFunctionConcurrency must leave
       hot-reload:
         enabled: false                        # true = enable bind-mount hot-reload via S3Bucket=hot-reload
-        # allowed-paths:                      # Optional allowlist of host paths that may be bind-mounted
+        # allowed-paths:                      # Required approved directories when hot reload is enabled
         #   - /home/user/projects
         #   - /tmp
 

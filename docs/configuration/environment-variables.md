@@ -33,13 +33,27 @@ Floci is configured exclusively through environment variables. Every option belo
 | `QUARKUS_HTTP_HOST` | `127.0.0.1` | Address Floci listens on. With TLS enabled, the proxy serving HTTP and HTTPS on `FLOCI_PORT` listens here |
 | `FLOCI_SECURITY_ALLOW_UNSAFE_NETWORK_EXPOSURE` | `false` | Allow listening outside loopback (`127.0.0.0/8`, `::1`, `localhost`). Without it, Floci refuses to start on any other address |
 
-Anyone who can reach Floci's port can call its APIs. The Docker images listen on `0.0.0.0` inside the container and pass both settings in their default command, so who can reach Floci depends on how you publish the port. Publish it on loopback unless other machines need it:
+Without an independent API key, anyone who can reach Floci's port can call its APIs. Emulated IAM credentials do not authenticate access to the emulator itself. The Docker images listen on `0.0.0.0` inside the container and pass both settings in their default command, so who can reach Floci depends on how you publish the port. Publish it on loopback unless other machines need it:
 
 ```bash
 docker run --rm -p 127.0.0.1:4566:4566 floci/floci:latest
 ```
 
 Running Floci directly on a Linux host (not in a container) with services that start containers, such as Lambda functions or ECS tasks, needs a non-loopback address. Those containers reach Floci through `host.docker.internal`, which resolves to the Docker bridge gateway (`172.17.0.1` by default) rather than to the host's loopback. Set `QUARKUS_HTTP_HOST=0.0.0.0` and `FLOCI_SECURITY_ALLOW_UNSAFE_NETWORK_EXPOSURE=true`, and keep port 4566 closed to other networks with a firewall. See also [Lambda on native Linux Docker](../getting-started/quick-start.md#lambda-on-native-linux-docker-ufw).
+
+## Emulator security controls
+
+These controls protect the emulator process independently of the AWS credentials and IAM behavior it emulates. See [Security hardening](./security-hardening.md) for migration details.
+
+| Variable | Default | Description |
+|---|---|---|
+| `FLOCI_SECURITY_API_KEY` | _(none)_ | Independent credential of at least 32 characters. Requires `X-Floci-Api-Key` on HTTP requests except read-only health checks |
+| `FLOCI_SECURITY_BROWSER_REQUEST_PROTECTION` | `true` | Reject browser requests using unapproved hosts or origins, including simple forms and DNS rebinding |
+| `FLOCI_SECURITY_ALLOWED_BROWSER_HOSTS` | _(none)_ | Additional exact browser hostnames; local emulator names and the configured hostname/base URL remain allowed |
+| `FLOCI_SECURITY_ALLOW_PRIVILEGED_CONTAINERS` | `false` | Explicitly allow privileged Docker workloads, including EC2, EKS and privileged CodeBuild builds |
+| `FLOCI_SECURITY_ALLOWED_CONTAINER_IMAGES` | _(none)_ | Comma-separated exact approved image references. Unset preserves arbitrary-image local development; prefer digest references when restricting |
+| `FLOCI_SECURITY_CONTAINER_PUBLISH_HOST` | `127.0.0.1` | Default host interface for Docker ports published by Floci |
+| `FLOCI_SECURITY_ALLOW_PRIVATE_OUTBOUND_TARGETS` | `true` | Permit private targets in API Gateway HTTP integrations, SNS HTTP, EventBridge API destinations and Cognito OIDC. Metadata addresses are always blocked |
 
 ## Browser CORS
 
@@ -254,7 +268,7 @@ See [Initialization Hooks](./initialization-hooks.md) for lifecycle phases and s
 | `FLOCI_SERVICES_LAMBDA_UNRESERVED_CONCURRENCY_MIN` | `100` | Minimum unreserved concurrency pool |
 | `FLOCI_SERVICES_LAMBDA_CODE_VOLUME_POPULATE_CONCURRENCY` | `max(2, cpus/2)` | Maximum concurrent first-time code-volume populates (functions whose unpacked code is at least 32 MB). The default is derived from the CPU count the JVM sees, so a CPU-constrained Floci container collapses it to 2 and concurrent cold starts of distinct functions serialise into pairs; set this to decouple the cap from the CPU allocation |
 | `FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED` | `false` | Watch Lambda code directories for changes and reload without redeployment |
-| `FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS` | _(none)_ | Comma-separated host paths that hot-reload is allowed to watch |
+| `FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS` | _(none)_ | Required approved host directories when hot-reload is enabled |
 | `FLOCI_SERVICES_LAMBDA_DOCKER_NETWORK` | _(none)_ | Docker network for Lambda containers (overrides `FLOCI_SERVICES_DOCKER_NETWORK`) |
 | `FLOCI_SERVICES_LAMBDA_DOCKER_FLAGS` | _(none)_ | Additional Docker flags applied to Lambda containers, such as `--env`, `--volume`, `--publish`, `--add-host`, `--dns`, `--label`, `--network`, `--user`, `--privileged`, and `--platform`. Published ports support `host:container` and `127.0.0.1:host:container` forms |
 | `FLOCI_SERVICES_LAMBDA_CONTAINER_NAME_PREFIX` | `floci` | Base name prefix for Lambda-spawned containers and code volumes (must match `[A-Za-z0-9][A-Za-z0-9_.-]*`) |
@@ -549,7 +563,7 @@ Floci starts the web console as a sidecar container the first time `/_floci/ui` 
 | `FLOCI_SERVICES_UI_IMAGE` | `floci/floci-ui:latest` | Console image to run |
 | `FLOCI_SERVICES_UI_CONTAINER_NAME` | `floci-ui` | Name of the sidecar container |
 | `FLOCI_SERVICES_UI_PORT` | `4500` | Host port the console is published on |
-| `FLOCI_SERVICES_UI_BIND_ADDRESS` | _(none)_ | Host interface that port is published on. Unset publishes on every interface; set `127.0.0.1` when Floci's own port is loopback-only |
+| `FLOCI_SERVICES_UI_BIND_ADDRESS` | `127.0.0.1` | Host interface that the console port is published on |
 | `FLOCI_SERVICES_UI_KEEP_RUNNING_ON_SHUTDOWN` | `false` | Leave the sidecar running when Floci stops |
 | `FLOCI_SERVICES_UI_DOCKER_NETWORK` | _(none)_ | Docker network for the sidecar (overrides `FLOCI_SERVICES_DOCKER_NETWORK`) |
 | `FLOCI_SERVICES_UI_ENDPOINT` | _(derived)_ | Floci endpoint handed to the console, instead of deriving it from the Docker host and TLS settings |

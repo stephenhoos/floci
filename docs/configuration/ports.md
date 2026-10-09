@@ -42,7 +42,7 @@ host:9400  ←──  opensearch container:9200  (Docker binds 9400 directly on 
        Floci reaches it via Docker network: floci-aws-opensearch-{name}:9200
 ```
 
-No `docker-compose.yml` `ports:` mapping is needed — the port is already on the host.
+No `docker-compose.yml` `ports:` mapping is needed: the port is already on the host. These bindings default to `127.0.0.1`; set `FLOCI_SECURITY_CONTAINER_PUBLISH_HOST` or the service's explicit bind address to permit other hosts.
 
 ## Port 4566 — AWS API
 
@@ -175,10 +175,10 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"           # All AWS API calls
-      - "6379-6399:6379-6399" # ElastiCache / Redis proxy (proxy in Floci)
+      - "127.0.0.1:4566:4566"           # All AWS API calls
+      - "127.0.0.1:6379-6399:6379-6399" # ElastiCache / Redis proxy (proxy in Floci)
       - "6400-6419:6400-6419" # MemoryDB proxy (proxy in Floci)
-      - "7001-7099:7001-7099" # RDS proxy (proxy in Floci)
+      - "127.0.0.1:7001-7099:7001-7099" # RDS proxy (proxy in Floci)
       - "8182-8282:8182-8282" # Neptune Gremlin proxy (proxy in Floci)
       - "8700-8799:8700-8799" # MWAA webserver proxy (proxy in Floci)
     volumes:

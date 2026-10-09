@@ -426,7 +426,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       FLOCI_SERVICES_EKS_DOCKER_NETWORK: my_project_default
 ```

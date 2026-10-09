@@ -30,17 +30,7 @@ Console container logs are streamed into CloudWatch Logs under the log group `/f
 Port `4500` is bound on the host by Docker, not by Floci, so it needs **no** `ports:` entry in your
 `docker-compose.yml`. See [Ports Reference](../configuration/ports.md).
 
-Docker publishes it on every interface, the same as a bare `"4500:4500"` mapping. If you
-deliberately keep Floci itself on loopback, with a `"127.0.0.1:4566:4566"` mapping rather than
-`"4566:4566"`, set the console to match:
-
-```yaml
-environment:
-  FLOCI_SERVICES_UI_BIND_ADDRESS: "127.0.0.1"
-```
-
-The console is unauthenticated and can drive every emulated service, so without this it would be
-reachable from the network that the API mapping was narrowed to keep it off.
+Docker publishes the console on `127.0.0.1` by default. This keeps its unauthenticated resource controls local to the host. To explicitly permit another interface, set `FLOCI_SERVICES_UI_BIND_ADDRESS` and restrict access to trusted clients. The supplied Compose file disables the console until `FLOCI_SERVICES_UI_ENABLED=true` is set.
 
 ## Configuration
 
@@ -104,7 +94,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

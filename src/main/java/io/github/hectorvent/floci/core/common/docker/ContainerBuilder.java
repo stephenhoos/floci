@@ -281,6 +281,8 @@ public class ContainerBuilder {
          */
         public Builder withPortBinding(int containerPort, int hostPort) {
             this.portBindings.put(containerPort, hostPort);
+            String publishHost = config.security().containerPublishHost();
+            this.portBindingHostIps.put(containerPort, publishHost == null ? "127.0.0.1" : publishHost);
             this.exposedPorts.add(containerPort);
             return this;
         }
@@ -290,7 +292,7 @@ public class ContainerBuilder {
          *
          * <p>Use this for a port whose reachability is an operator decision rather than a fixed
          * property of the container: the caller passes the configured address through, and a null
-         * or blank one falls back to Docker's own default of publishing on every interface.
+         * or blank one falls back to the configured container publishing address.
          */
         public Builder withPortBinding(int containerPort, int hostPort, String hostIp) {
             withPortBinding(containerPort, hostPort);

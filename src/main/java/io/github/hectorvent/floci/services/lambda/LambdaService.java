@@ -8,6 +8,7 @@ import io.github.hectorvent.floci.config.EmulatorConfig;
 import io.github.hectorvent.floci.core.common.AwsArnUtils;
 import io.github.hectorvent.floci.core.common.AwsException;
 import io.github.hectorvent.floci.core.common.CustomResourceLiveness;
+import io.github.hectorvent.floci.core.common.HostPathContainment;
 import io.github.hectorvent.floci.core.common.RegionResolver;
 import io.github.hectorvent.floci.core.common.RequestScopes;
 import io.github.hectorvent.floci.core.resource.ExplorerResource;
@@ -3451,16 +3452,20 @@ public class LambdaService implements ResourceProvider {
             throw new AwsException("InvalidParameterValueException",
                     "Hot-reload S3Key is not a valid path: " + hostPath, 400);
         }
+        if (config.services().lambda().hotReload().allowedPaths().isEmpty()) {
+            throw new AwsException("InvalidParameterValueException",
+                    "Hot-reload requires FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS with approved directories.", 400);
+        }
         config.services().lambda().hotReload().allowedPaths().ifPresent(allowed -> {
             if (allowed.stream().noneMatch(prefix -> isUnderHotReloadPrefix(normalized, prefix))) {
                 throw new AwsException("InvalidParameterValueException",
                         "Path '" + hostPath + "' is not under an allowed hot-reload mount prefix.", 400);
             }
         });
-        if (config.services().lambda().hotReload().allowedPaths().isEmpty() && reachesDockerSocketDirectory(normalized)) {
+        if (exposesHotReloadSocket(normalized)) {
             throw new AwsException("InvalidParameterValueException",
-                    "Path '" + hostPath + "' can expose the Docker socket. Set "
-                            + "FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS to mount it.", 400);
+                    "Path '" + hostPath + "' can expose the Docker socket. Use "
+                            + "an approved directory that does not contain the Docker socket.", 400);
         }
         String resolvedHostPath = toDockerHostPath(normalized);
         fn.setHotReloadHostPath(resolvedHostPath);
@@ -3503,10 +3508,36 @@ public class LambdaService implements ResourceProvider {
             return false;
         }
         try {
-            return normalizedPath.startsWith(Path.of(prefix).normalize());
-        } catch (InvalidPathException ignored) {
+            return HostPathContainment.isUnderRoot(normalizedPath, Path.of(prefix));
+        } catch (InvalidPathException | IOException ignored) {
             // A malformed prefix can never contain a path, so it does not allow anything.
             return false;
+        }
+    }
+
+    private boolean exposesHotReloadSocket(Path path) {
+        if (path.getNameCount() == 0 || path.startsWith(Path.of("/proc"))) {
+            return true;
+        }
+        List<String> sockets = new ArrayList<>(List.of("/var/run/docker.sock", "/run/docker.sock",
+                System.getProperty("user.home") + "/.docker/run/docker.sock"));
+        String configuredHost = config.docker().dockerHost();
+        if (configuredHost != null && configuredHost.startsWith("unix://")) {
+            sockets.add(configuredHost.substring("unix://".length()));
+        }
+        try {
+            Path canonicalPath = HostPathContainment.canonical(path);
+            for (String socket : sockets) {
+                Path socketPath = Path.of(socket);
+                // Keep the socket's own symlink unresolved, as a bind of its parent exposes it.
+                Path socketParent = HostPathContainment.canonical(socketPath.getParent());
+                if (socketPath.startsWith(path) || socketParent.resolve(socketPath.getFileName()).startsWith(canonicalPath)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (IOException | InvalidPathException e) {
+            return true;
         }
     }
 

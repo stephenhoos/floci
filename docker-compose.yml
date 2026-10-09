@@ -5,10 +5,10 @@ services:
       dockerfile: docker/Dockerfile
     tty: true
     ports:
-      - "4566:4566"
-      - "6379-6399:6379-6399"
-      - "7001-7099:7001-7099"
-      - "9200-9299:9200-9299"
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:6379-6399:6379-6399"
+      - "127.0.0.1:7001-7099:7001-7099"
+      - "127.0.0.1:9200-9299:9200-9299"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/app/data
@@ -23,12 +23,10 @@ services:
       # localhost.floci.io resolves everywhere: public DNS -> 127.0.0.1 on the host
       # (reaching the published proxy ports), the network alias below inside Compose.
       FLOCI_SERVICES_ELASTICACHE_CLUSTER_ANNOUNCE_HOSTNAME: localhost.floci.io
-      FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED: "true"
-      # Match the compatibility workflow (.github/workflows/compatibility.yml) so the
-      # local Docker test run exercises the same Floci configuration as CI.
-      # TLS proxy serves HTTP and HTTPS on the same port 4566 (first-byte sniffing),
-      # so no extra port mapping is needed — this is what makes the TLS/HTTPS suites pass.
-      FLOCI_TLS_ENABLED: "true"
+      FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ENABLED: "false"
+      FLOCI_SERVICES_UI_ENABLED: "false"
+      # TLS is opt-in. Use client-scoped trust for the generated emulator CA.
+      FLOCI_TLS_ENABLED: "false"
     networks:
       floci_default:
         aliases:

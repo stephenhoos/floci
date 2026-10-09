@@ -234,8 +234,8 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
-      - "7001-7099:7001-7099"   # RDS proxy ports
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:7001-7099:7001-7099"   # RDS proxy ports
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

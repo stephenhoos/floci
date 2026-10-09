@@ -63,7 +63,7 @@ public class CodeArtifactNpmDataPlane {
     private static final int MAX_CONCURRENT_PREFLIGHTS = 4;
     private static final int MAX_QUEUED_PREFLIGHTS = 64;
     private static final Set<String> HOP_BY_HOP_HEADERS = Set.of(
-            "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+            "x-floci-api-key", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
             "te", "trailers", "transfer-encoding", "upgrade", "authorization", "host");
 
     private final CodeArtifactService service;

@@ -40,13 +40,9 @@ class LaunchedContainerAwsEnvTest {
         assertTrue(env.contains("FLOCI_ENDPOINT=http://localhost:4566"));
         assertTrue(env.contains("AWS_ENDPOINT_URL=http://localhost:4566"));
 
-        // Placeholder credentials: the host env var when set, otherwise "test".
-        String expectedAk = System.getenv("AWS_ACCESS_KEY_ID") != null ? System.getenv("AWS_ACCESS_KEY_ID") : "test";
-        String expectedSk = System.getenv("AWS_SECRET_ACCESS_KEY") != null ? System.getenv("AWS_SECRET_ACCESS_KEY") : "test";
-        String expectedSt = System.getenv("AWS_SESSION_TOKEN") != null ? System.getenv("AWS_SESSION_TOKEN") : "test";
-        assertTrue(env.contains("AWS_ACCESS_KEY_ID=" + expectedAk));
-        assertTrue(env.contains("AWS_SECRET_ACCESS_KEY=" + expectedSk));
-        assertTrue(env.contains("AWS_SESSION_TOKEN=" + expectedSt));
+        assertTrue(env.contains("AWS_ACCESS_KEY_ID=test"));
+        assertTrue(env.contains("AWS_SECRET_ACCESS_KEY=test"));
+        assertTrue(env.contains("AWS_SESSION_TOKEN=test"));
 
         // No mounted-config file paths when credentials are injected directly.
         assertTrue(env.stream().noneMatch(e -> e.startsWith("AWS_SHARED_CREDENTIALS_FILE=")));
@@ -174,13 +170,17 @@ class LaunchedContainerAwsEnvTest {
     }
 
     @Test
-    void fallsBackToHostEnvWhenOwnerAccountIdIsNotTwelveDigits() {
+    void realHostCredentialsAreNotForwardedWithoutAKnownOwner() {
         LaunchedContainerAwsEnv awsEnv = awsEnvWithHostEnv("http://localhost:4566",
-                Map.of("AWS_ACCESS_KEY_ID", "AKIAHOSTKEY"));
+                Map.of("AWS_ACCESS_KEY_ID", "AKIAHOSTKEY", "AWS_SECRET_ACCESS_KEY", "real-secret",
+                        "AWS_SESSION_TOKEN", "real-token"));
 
         List<String> env = awsEnv.sdkBaselineEnv("us-east-1", Optional.empty(), Optional.empty(), "not-an-account-id");
 
-        assertTrue(env.contains("AWS_ACCESS_KEY_ID=AKIAHOSTKEY"));
+        assertTrue(env.contains("AWS_ACCESS_KEY_ID=test"));
+        assertTrue(env.contains("AWS_SECRET_ACCESS_KEY=test"));
+        assertTrue(env.contains("AWS_SESSION_TOKEN=test"));
+        assertTrue(env.stream().noneMatch(value -> value.contains("real-") || value.contains("AKIAHOSTKEY")));
     }
 
     @Test

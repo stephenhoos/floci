@@ -52,8 +52,10 @@ ENV AWS_PAGER=""
 # a v2 install against real AWS. A hook passing raw bytes (e.g.
 # aws lambda invoke --payload) needs --cli-binary-format raw-in-base64-out.
 ARG AWSCLI_VERSION=2.36.24
+# Public signing key from the AWS CLI installation documentation.
+COPY docker/aws-cli-public-key.asc /tmp/aws-cli-public-key.asc
 RUN useradd -r -u 1001 -g root -d /app -s /sbin/nologin floci \
-    && microdnf install -y --nodocs python3 python3-pip unzip \
+    && microdnf install -y --nodocs python3 python3-pip unzip gnupg2 \
     && pip3 install --no-cache-dir boto3 \
     && case "$(uname -m)" in \
          x86_64)  arch=x86_64 ;; \
@@ -61,9 +63,14 @@ RUN useradd -r -u 1001 -g root -d /app -s /sbin/nologin floci \
          *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;; \
        esac \
     && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${arch}-${AWSCLI_VERSION}.zip" -o /tmp/awscliv2.zip \
+    && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${arch}-${AWSCLI_VERSION}.zip.sig" -o /tmp/awscliv2.sig \
+    && mkdir -m 700 /tmp/awscli-gpg \
+    && gpg --batch --homedir /tmp/awscli-gpg --import /tmp/aws-cli-public-key.asc \
+    && test "$(gpg --batch --homedir /tmp/awscli-gpg --with-colons --fingerprint | awk -F: '$1 == "fpr" { print $10; exit }')" = "FB5DB77FD5C118B80511ADA8A6310ACC4672475C" \
+    && gpg --batch --homedir /tmp/awscli-gpg --verify /tmp/awscliv2.sig /tmp/awscliv2.zip \
     && unzip -q /tmp/awscliv2.zip -d /tmp \
     && /tmp/aws/install --bin-dir /usr/bin --install-dir /usr/local/aws-cli \
-    && rm -rf /tmp/awscliv2.zip /tmp/aws \
+    && rm -rf /tmp/awscliv2.zip /tmp/awscliv2.sig /tmp/aws /tmp/awscli-gpg /tmp/aws-cli-public-key.asc \
     # The CLI's `aws <cmd> help` example pages are 26 MB of text nobody reads inside a container;
     # the command reference itself (dist/awscli/data) stays. unzip exists only to unpack the CLI.
     # pip stays: the image documents it and init hooks use it to install packages.
@@ -74,7 +81,7 @@ RUN useradd -r -u 1001 -g root -d /app -s /sbin/nologin floci \
     && rm -rf /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index /usr/local/aws-cli/v2/*/dist/aws_completer /usr/bin/aws_completer \
     && rm -rf /usr/lib64/python3.9/lib2to3 /usr/lib64/python3.9/ensurepip \
     && python3 -c 'import pathlib; [p.unlink() for d in ("/usr/lib64/python3.9","/usr/lib/python3.9") for p in pathlib.Path(d).rglob("*.opt-[12].pyc")]' \
-    && microdnf remove -y unzip \
+    && microdnf remove -y unzip gnupg2 \
     && microdnf clean all \
     && rm -rf /root/.cache/pip
 

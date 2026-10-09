@@ -108,6 +108,15 @@ class HttpProxyInvokerTest {
     }
 
     @Test
+    void emulatorApiKeyIsNotForwardedToIntegrationBackend() {
+        Integration integration = httpProxyIntegration("http://127.0.0.1:" + backendPort + "/", null);
+        RequestContext context = ctxFor("GET", "/", null,
+                Map.of("X-Floci-Api-Key", "synthetic-secret"), Map.of(), null, Map.of());
+        assertEquals(200, new HttpProxyInvoker().invoke(integration, context).statusCode());
+        assertNull(received.get().headers().getFirst("X-Floci-Api-Key"));
+    }
+
+    @Test
     void appliesRequestParametersHeaderInjection() {
         Integration integration = httpProxyIntegration(
                 "http://127.0.0.1:" + backendPort + "/public/{proxy}",

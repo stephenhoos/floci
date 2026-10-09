@@ -39,7 +39,7 @@ Start Floci with a default region in the partition, then point clients at it wit
 the same partition and an endpoint override:
 
 ```bash
-docker run --rm -p 4566:4566 \
+docker run --rm -p 127.0.0.1:4566:4566 \
   -e FLOCI_DEFAULT_REGION=cn-north-1 \
   floci/floci:latest
 

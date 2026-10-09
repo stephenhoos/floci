@@ -93,7 +93,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
 ```
 
 Start Floci:
@@ -130,6 +130,8 @@ The old `hectorvent/floci` repository no longer receives updates.
 
 </details>
 
+For the safer defaults and opt-in settings for privileged workloads, image restrictions, browser access and an independent API key, see [Security hardening](docs/configuration/security-hardening.md).
+
 ## Web Console
 
 Floci ships a browser console for inspecting the resources in your local emulator.
@@ -145,7 +147,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 ```
@@ -156,7 +158,7 @@ services:
 | `FLOCI_SERVICES_UI_IMAGE` | `floci/floci-ui:latest` | Console image to run |
 | `FLOCI_SERVICES_UI_CONTAINER_NAME` | `floci-ui` | Name of the sidecar container |
 | `FLOCI_SERVICES_UI_PORT` | `4500` | Host port the console is published on |
-| `FLOCI_SERVICES_UI_BIND_ADDRESS` | _(none)_ | Host interface that port is published on. Unset publishes on every interface; set `127.0.0.1` when Floci's own port is loopback-only |
+| `FLOCI_SERVICES_UI_BIND_ADDRESS` | `127.0.0.1` | Host interface that the console port is published on |
 | `FLOCI_SERVICES_UI_KEEP_RUNNING_ON_SHUTDOWN` | `false` | Leave the sidecar running when Floci stops |
 
 ### Running a different console
@@ -428,7 +430,7 @@ Docker-backed services require the Docker socket:
 
 ```bash
 docker run -d --name floci \
-  -p 4566:4566 \
+  -p 127.0.0.1:4566:4566 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -u root \
   floci/floci:latest
@@ -875,7 +877,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     environment:
       - FLOCI_HOSTNAME=floci
 

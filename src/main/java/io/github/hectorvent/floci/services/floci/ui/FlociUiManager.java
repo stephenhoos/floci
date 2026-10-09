@@ -529,13 +529,12 @@ public class FlociUiManager {
      */
     static String resolveBindAddress(Optional<String> configured) {
         if (configured.isEmpty()) {
-            return null;
+            return "127.0.0.1";
         }
         String value = configured.get().trim();
         if (value.isEmpty()) {
             throw new IllegalStateException(
-                    "floci.services.ui.bind-address is set but blank: remove it to publish the "
-                            + "console on every interface, or give it a host address to bind.");
+                    "floci.services.ui.bind-address is set but blank: give it an explicit host address.");
         }
         return value;
     }

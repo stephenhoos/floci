@@ -6,15 +6,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
-/**
- * Warns at startup when Lambda hot-reload is enabled with no allow-list, because any absolute host
- * path is then a legal bind-mount target. Unlike {@link NetworkExposureGuard} this only warns: the
- * combination is the documented default of the published compose file, so refusing to start would
- * break it.
- *
- * <p>Startup rather than first use: the operator who most needs the message is the one who has not
- * touched Lambda yet.
- */
+/** Warns when enabled hot reload lacks the approved directories required to accept requests. */
 @ApplicationScoped
 public class HotReloadExposureWarning {
 
@@ -28,13 +20,13 @@ public class HotReloadExposureWarning {
     }
 
     void onStart(@Observes StartupEvent ignored) {
-        if (hotReloadAcceptsAnyPath(config)) {
+        if (hotReloadNeedsAllowedPaths(config)) {
             LOG.warn("Lambda hot-reload is enabled without FLOCI_SERVICES_LAMBDA_HOT_RELOAD_ALLOWED_PATHS: "
-                    + "any absolute path on the Docker host can be bind-mounted into a function container");
+                    + "requests are rejected until approved code directories are configured");
         }
     }
 
-    static boolean hotReloadAcceptsAnyPath(EmulatorConfig config) {
+    static boolean hotReloadNeedsAllowedPaths(EmulatorConfig config) {
         EmulatorConfig.LambdaServiceConfig.HotReload hotReload = config.services().lambda().hotReload();
         return hotReload.enabled() && hotReload.allowedPaths().isEmpty();
     }

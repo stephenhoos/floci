@@ -13,7 +13,7 @@ This guide gets Floci running and verifies that AWS CLI commands work against it
       floci:
         image: floci/floci:latest
         ports:
-          - "4566:4566"
+          - "127.0.0.1:4566:4566"
         volumes:
           # Local directory bind mount (default)
           - ./data:/app/data
@@ -38,7 +38,7 @@ This guide gets Floci running and verifies that AWS CLI commands work against it
       floci:
         image: floci/floci:latest-compat
         ports:
-          - "4566:4566"
+          - "127.0.0.1:4566:4566"
         volumes:
           # Local directory bind mount (default)
           - ./data:/app/data

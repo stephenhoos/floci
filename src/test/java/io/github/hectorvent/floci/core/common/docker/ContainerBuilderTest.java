@@ -329,6 +329,7 @@ class ContainerBuilderTest {
         final EmulatorConfig.ServicesConfig services = mock(EmulatorConfig.ServicesConfig.class);
         final EmulatorConfig.DockerConfig docker = mock(EmulatorConfig.DockerConfig.class);
         final EmulatorConfig.DnsConfig dns = mock(EmulatorConfig.DnsConfig.class);
+        final EmulatorConfig.SecurityConfig security = mock(EmulatorConfig.SecurityConfig.class);
         final DockerHostResolver dockerHostResolver = mock(DockerHostResolver.class);
         final EmbeddedDnsServer embeddedDnsServer = mock(EmbeddedDnsServer.class);
         final CurrentContainerNetworkResolver currentContainerNetworkResolver =
@@ -338,6 +339,8 @@ class ContainerBuilderTest {
 
         TestFixture() {
             when(config.services()).thenReturn(services);
+            when(config.security()).thenReturn(security);
+            when(security.containerPublishHost()).thenReturn("127.0.0.1");
             when(services.dockerNetwork()).thenReturn(Optional.empty());
             when(config.docker()).thenReturn(docker);
             when(docker.logMaxSize()).thenReturn("10m");

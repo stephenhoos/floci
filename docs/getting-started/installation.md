@@ -36,7 +36,7 @@ services:
   floci:
     image: floci/floci:latest
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
 ```
 
 Use the compat image if your workflow requires the AWS CLI or boto3 available inside the container:
@@ -46,7 +46,7 @@ services:
   floci:
     image: floci/floci:latest-compat
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
 ```
 
 Standard and compat have identical startup time (~24 ms) and memory footprint (~13 MiB). On Raspberry Pi 4-class ARM64 CPUs that lack LSE, use `floci/floci:latest-baseline` (or a pinned `x.y.z-baseline` release).

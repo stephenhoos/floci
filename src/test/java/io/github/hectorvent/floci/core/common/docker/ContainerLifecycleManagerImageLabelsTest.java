@@ -9,6 +9,7 @@ import io.github.hectorvent.floci.config.EmulatorConfig;
 import io.github.hectorvent.floci.services.lambda.launcher.ImageCacheService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -42,7 +43,7 @@ class ContainerLifecycleManagerImageLabelsTest {
     @Mock
     PortAllocator portAllocator;
 
-    @Mock
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     EmulatorConfig config;
 
     private ContainerLifecycleManager manager() {

@@ -120,7 +120,7 @@ class GlobalCorsFilterIntegrationTest {
         .when()
             .post("/")
         .then()
-            .statusCode(200)
+            .statusCode(403)
             .header("Access-Control-Allow-Origin", nullValue());
     }
 

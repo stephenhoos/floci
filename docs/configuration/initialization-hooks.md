@@ -100,7 +100,7 @@ services:
   floci:
     image: floci/floci:latest-compat
     ports:
-      - "4566:4566"
+      - "127.0.0.1:4566:4566"
     volumes:
       - ./init/boot.d:/etc/floci/init/boot.d:ro
       - ./init/start.d:/etc/floci/init/start.d:ro
