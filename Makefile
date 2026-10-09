@@ -149,9 +149,9 @@ docs-check: ## CI gate: regenerate and fail if anything is stale, unregistered, 
 		echo "error: the Service Matrix in docs/services/index.md is out of sync (see warnings above)."; \
 		exit 1; \
 	}
-	@! grep -rn -- '-jvm' docs README.md CONTRIBUTING.md || { \
+	@! grep -rnE -- ':[[:alnum:]._-]+-jvm' docs README.md CONTRIBUTING.md || { \
 		echo ""; \
-		echo "error: docs name a '-jvm' image tag; release.yml publishes only x.y.z, latest and their -compat twins."; \
+		echo "error: docs name an unpublished '-jvm' image tag. Use the documented release tags."; \
 		exit 1; \
 	}
 
